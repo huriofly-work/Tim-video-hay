@@ -68,18 +68,6 @@ App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên b�
 
 ## Hạ tầng phát triển
 
-### CI GitHub Actions cho build + test
-
-**What:** Chạy `scripts/Test-Native.ps1` trên `windows-latest` với .NET SDK 10 cho mỗi PR.
-
-**Why:** PR hiện không có check tự động, chỉ có test chạy local.
-
-**Context:** **Chặn:** cần nguồn tải `ffprobe` 9.0.2 (gyan.dev full_build) ổn định cho CI, khớp SHA-256 trong `packaging/tool-manifest.public.json`; thiếu ffprobe làm 3 ca test thất bại. **Đạt khi:** PR vào `main` có check xanh, không cần secret Google.
-
-**Effort:** M
-**Priority:** P3
-**Depends on:** None
-
 ### Audit lỗ hổng dependency
 
 **What:** Thỉnh thoảng chạy `dotnet list package --vulnerable` cho các project native.
@@ -112,6 +100,19 @@ App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên b�
 - **Tính năng:** phụ đề nguồn (chưa có mẫu dữ liệu có mốc thời gian), nguồn video ngoài Douyin, API tải bên thứ ba, nhập video local, chuyển mã, AI.
 
 ## Completed
+
+### CI GitHub Actions cho build + test
+
+**What:** Chạy `scripts/Test-Native.ps1` trên `windows-latest` với .NET SDK 10 cho mỗi PR.
+
+**Why:** PR hiện không có check tự động, chỉ có test chạy local.
+
+**Context:** Cần nguồn tải `ffprobe` 9.0.2 (gyan.dev full_build) ổn định cho CI, khớp SHA-256 trong `packaging/tool-manifest.public.json`; thiếu ffprobe làm 3 ca test thất bại. **Đạt khi:** PR vào `main` có check xanh, không cần secret Google.
+
+**Effort:** M
+**Priority:** P3
+**Depends on:** None
+**Completed:** 2026-11-14 — `.github/workflows/ci.yml` tải ffmpeg từ GitHub release `GyanD/codexffmpeg` 9.0.2, kiểm SHA-256 file nén và `ffprobe.exe`; bỏ qua job khi chỉ sửa `.md`.
 
 ### Phiên bản hiển thị còn cứng trong mã
 

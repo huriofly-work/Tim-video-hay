@@ -148,7 +148,7 @@ Node/web/extension cũ ở `legacy/browser-v022`, không thuộc build hoặc đ
 
 ## Phát triển
 
-`scripts/Prepare-NativeTools.ps1`: chuẩn bị ffprobe standalone đúng hash đã ghim. Bộ tải HTTP nội bộ không cần yt-dlp. `scripts/Build-Native.ps1`: build/test/publish Windows x64 tự chứa; máy phát triển cần .NET 10 SDK.
+`scripts/Prepare-NativeTools.ps1`: chuẩn bị ffprobe standalone đúng hash đã ghim. Bộ tải HTTP nội bộ không cần yt-dlp. `scripts/Build-Native.ps1`: build/test/publish Windows x64 tự chứa; máy phát triển cần .NET 10 SDK. `scripts/Test-Native.ps1`: một lệnh build + test; CI GitHub Actions (`.github/workflows/ci.yml`) chạy lệnh này cho mỗi PR và push vào `main`, bỏ qua khi chỉ sửa file `.md`.
 
 Chỉ có một bản build, không nhúng cấu hình Google. Nhập tệp OAuth client loại Desktop app một lần ở **Thiết lập nâng cao**; app lưu mã hóa DPAPI trong hồ sơ và dùng tiếp khi cập nhật, nên không đổi project của quyền cũ. Giữ tệp JSON ngoài Git (có thể đặt ở `packaging/google-oauth.desktop.json`, đã gitignore).
 

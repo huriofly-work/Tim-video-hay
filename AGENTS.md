@@ -23,7 +23,7 @@
 - Clone mới cần chuẩn bị `tools/ffprobe.exe` và thư mục fixture có đường dẫn ngắn (mục 1 của HANDOFF).
 - Dùng lock file NuGet và test runner console; `./scripts/Test-WindowsLaunchers.ps1` để kiểm tra PowerShell.
 - Tách kết quả fixture khỏi nghiệm thu thực tế.
-- Chưa có CI: PR Dependabot phải chạy `scripts/Test-Native.ps1` trên nhánh đó trước khi merge.
+- Đổi bản ffprobe thì sửa cả `packaging/tool-manifest.public.json` lẫn `FFMPEG_*` trong `.github/workflows/ci.yml`.
 
 ## Dữ liệu riêng tư
 - Kiểm tra app với `--data-dir` trỏ tới fixture riêng. Chỉ dùng tài khoản, bảng, kênh hoặc hồ sơ thật khi có chỉ dẫn riêng.

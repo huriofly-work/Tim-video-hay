@@ -4,6 +4,10 @@ Mỗi bản ghi một mục, mới nhất ở trên. Bằng chứng kiểm tra c
 
 ## [Unreleased]
 
+### Added
+- CI GitHub Actions (`.github/workflows/ci.yml`) chạy `scripts/Test-Native.ps1` trên `windows-latest` cho mỗi PR và push vào `main`; bỏ qua khi chỉ sửa file `.md`. CI tải ffmpeg 9.0.2 full_build từ GitHub release của gyan.dev, so SHA-256 của file nén rồi `Prepare-NativeTools.ps1` so tiếp SHA-256 của `ffprobe.exe` theo manifest. Action ghim theo SHA commit.
+- Dependabot nâng cấp các GitHub Action hằng tháng, gộp một PR.
+
 ### Changed
 - Nâng `Microsoft.Data.Sqlite` và `System.Security.Cryptography.ProtectedData` 10.0.12 → 11.0.0 (SQLitePCLRaw 3.0.5), `Microsoft.Web.WebView2` 1.0.4258.31 → 1.0.4314.35. Tạo lại lock file của Desktop và Tests để restore khoá phiên bản chạy được. Giấy phép WebView2 không đổi.
 
