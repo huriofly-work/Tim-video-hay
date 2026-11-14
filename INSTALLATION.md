@@ -1,4 +1,4 @@
-# Cài đặt, cập nhật và gỡ Tìm video hay 0.3.44
+# Cài đặt, cập nhật và gỡ Tìm video hay 0.3.45
 
 Cập nhật 06/10/2026. Tài liệu cho gói portable, không cần mã nguồn. Bản Windows x64 tự chứa runtime và công cụ, chưa ký số. Không cần cài Node/Python/.NET SDK hoặc quyền Administrator. Chỉ mở gói từ nguồn bạn tin cậy; không tắt Defender/SmartScreen để chạy app.
 
@@ -20,7 +20,7 @@ Gói vẫn dùng file EXE. Cai-dat.cmd cài từ gói portable, chưa phải Set
 
 2. Dùng portable: mở TimVideoHay.exe. Muốn cài: mở **Cai-dat.cmd**. Script kiểm tra file với release-manifest.json rồi sao chép; không tự chạy app.
 
-3. Chương trình được cài ở `%LocalAppData%\Programs\TimVideoHay\0.3.44`. Có shortcut **Tìm video hay** ở Start Menu/desktop và **Gỡ Tìm video hay 0.3.44** ở Start Menu, riêng cho tài khoản Windows hiện tại.
+3. Chương trình được cài ở `%LocalAppData%\Programs\TimVideoHay\0.3.45`. Có shortcut **Tìm video hay** ở Start Menu/desktop và **Gỡ Tìm video hay 0.3.45** ở Start Menu, riêng cho tài khoản Windows hiện tại.
 
 4. Mở app, chọn thư mục tại Xử lý video, chỉ tích Tải video để thử một link trước.
 
@@ -54,7 +54,7 @@ Thêm `-NoShortcuts` nếu không muốn tạo shortcut nào. Sử dụng app: [
 
 1. Thoát app từ khay hệ thống. Script từ chối nếu bản cần gỡ còn chạy; không tự giết tiến trình/xóa công việc.
 
-2. Mở **Gỡ Tìm video hay 0.3.44** ở Start Menu, hoặc **Go-cai-dat.cmd** trong thư mục giải nén/bản cài.
+2. Mở **Gỡ Tìm video hay 0.3.45** ở Start Menu, hoặc **Go-cai-dat.cmd** trong thư mục giải nén/bản cài.
 
 3. PowerShell hỏi xác nhận: nhập **Y** rồi Enter để gỡ, **N** để hủy.
 

@@ -105,6 +105,7 @@ App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên b�
 **Effort:** S
 **Priority:** P3
 **Depends on:** None
+**Completed:** v0.3.45 (2026-11-14) — `AppInfo` trong Core cấp tiêu đề cửa sổ và User-Agent (cả bản dịch tên kênh) từ phiên bản assembly; test runner đối chiếu với `VERSION`.
 
 ### Tài liệu cũ lệch với mã
 

@@ -82,6 +82,14 @@ await Test("Bộ giới hạn tên giữ nguyên dấu tiếng Việt và emoji 
     Assert(Rules.NameLength(limited) == 30 && limited.EndsWith("👩‍🔬"));
     Assert(Rules.NameLength(Rules.VideoName(limited)) == 30);
 }));
+await Test("Tiêu đề cửa sổ và User-Agent dùng đúng số trong VERSION", () => Sync(() =>
+{
+    var directory = new DirectoryInfo(AppContext.BaseDirectory);
+    while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "VERSION"))) directory = directory.Parent;
+    Assert(directory is not null);
+    var version = File.ReadAllText(Path.Combine(directory!.FullName, "VERSION")).Trim();
+    Assert(AppInfo.Version == version && AppInfo.WindowTitle == "Tìm video hay " + version && AppInfo.UserAgent == "TimVideoHay/" + version);
+}));
 await Test("Tiêu đề hỗ trợ 100 Unicode scalar, chặn 101", async () => { var job = Job(); job.Title = string.Concat(Enumerable.Repeat("😀", 100)); Rules.Validate(job); job.Title += "a"; await Throws<ArgumentException>(() => Sync(() => Rules.Validate(job))); });
 await Test("Link giả/ngoài Douyin không lọt resolver", async () => { foreach (var url in new[] { "https://douyin.com.evil.test/video/123", "http://www.douyin.com/video/123", "https://user@www.douyin.com/video/123", "https://www.douyin.com:999/video/123" }) await Throws<ArgumentException>(() => Sync(() => Rules.DouyinUri(url))); });
 

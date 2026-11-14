@@ -1,0 +1,15 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directories:
+      - /native/TimVideoHay.Core
+      - /native/TimVideoHay.Infrastructure
+      - /native/TimVideoHay.Desktop
+      - /native/TimVideoHay.Tests
+    schedule:
+      interval: weekly
+    groups:
+      nuget:
+        patterns:
+          - "*"
+    open-pull-requests-limit: 5

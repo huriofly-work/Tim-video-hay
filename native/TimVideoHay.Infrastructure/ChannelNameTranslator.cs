@@ -19,7 +19,7 @@ public sealed class ChannelNameTranslator(HttpClient? client = null)
         using var owned = client is null ? new HttpClient(new HttpClientHandler { AllowAutoRedirect = false, UseCookies = false }) : null;
         using var budget = CancellationTokenSource.CreateLinkedTokenSource(ct); budget.CancelAfter(TimeSpan.FromSeconds(12));
         using var request = new HttpRequestMessage(HttpMethod.Get, "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=en&dt=t&q=" + Uri.EscapeDataString(name));
-        request.Headers.UserAgent.ParseAdd("TimVideoHay/0.3.16");
+        request.Headers.UserAgent.ParseAdd(AppInfo.UserAgent);
         try
         {
             using var response = await (client ?? owned!).SendAsync(request, HttpCompletionOption.ResponseHeadersRead, budget.Token);

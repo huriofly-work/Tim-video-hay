@@ -5,6 +5,7 @@
 - Release (tag + GitHub Release) dùng để quản lý phiên bản và sao lưu bản cài; repo public nên ai cũng tải được file đính kèm.
 - Mọi thứ commit, Issue, PR và release notes đều công khai: không ghi email, đường dẫn máy, ID project Google hay chi tiết tài khoản thật.
 - Chỉ tạo tag/release và thao tác Git khi được giao.
+- Ruleset chặn push thẳng vào `main` và sửa/xoá tag `v*`: mọi thay đổi đi qua nhánh → PR → squash merge.
 
 ## Bắt đầu
 - Đọc [docs/HANDOFF.md](docs/HANDOFF.md) trước.
