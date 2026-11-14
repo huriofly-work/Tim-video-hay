@@ -1,0 +1,91 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  FFMPEG_VERSION: 9.0.2
+  # SHA-256 của ffmpeg-9.0.2-full_build.7z trên GitHub release GyanD/codexffmpeg.
+  FFMPEG_ARCHIVE_SHA256: f0e46253c70dfe902bac915dfb4224f0cf1b7c6eeab9da2ccc9a5581f9a71b13
+
+jobs:
+  changes:
+    name: Kiểm tra file thay đổi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      code: ${{ steps.filter.outputs.code }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - id: filter
+        uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
+        with:
+          predicate-quantifier: every
+          filters: |
+            code:
+              - '**'
+              - '!**/*.md'
+
+  test:
+    name: Test-Native
+    needs: changes
+    # Lọc ở cấp job: PR chỉ sửa tài liệu thì job bị bỏ qua và vẫn tính là đạt.
+    if: needs.changes.outputs.code == 'true'
+    runs-on: windows-latest
+    timeout-minutes: 40
+    defaults:
+      run:
+        shell: powershell
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          dotnet-version: 10.0.x
+
+      - id: ffprobe-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: ${{ runner.temp }}\ffprobe
+          key: ffprobe-${{ env.FFMPEG_VERSION }}-${{ hashFiles('packaging/tool-manifest.public.json') }}
+
+      - name: Tải ffprobe đã ghim
+        if: steps.ffprobe-cache.outputs.cache-hit != 'true'
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $ProgressPreference = 'SilentlyContinue'
+          $archive = Join-Path $env:RUNNER_TEMP 'ffmpeg.7z'
+          $url = "https://github.com/GyanD/codexffmpeg/releases/download/$env:FFMPEG_VERSION/ffmpeg-$env:FFMPEG_VERSION-full_build.7z"
+          Invoke-WebRequest -Uri $url -OutFile $archive
+          $hash = (Get-FileHash -LiteralPath $archive -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($hash -ne $env:FFMPEG_ARCHIVE_SHA256) { throw "File ffmpeg tải về có SHA-256 $hash, không khớp giá trị đã ghim." }
+          $dest = Join-Path $env:RUNNER_TEMP 'ffprobe'
+          & 7z e $archive "-o$dest" ffprobe.exe -r -y
+          if ($LASTEXITCODE -ne 0) { throw 'Giải nén ffprobe.exe thất bại.' }
+
+      - name: Chuẩn bị ffprobe (kiểm tra SHA-256 theo manifest)
+        run: ./scripts/Prepare-NativeTools.ps1 -FfprobePath (Join-Path $env:RUNNER_TEMP 'ffprobe\ffprobe.exe')
+
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: tools/nuget-packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('native/**/packages.lock.json') }}
+
+      - name: Build + test
+        run: ./scripts/Test-Native.ps1
