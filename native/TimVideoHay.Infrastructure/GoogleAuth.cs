@@ -13,7 +13,8 @@ namespace TimVideoHay.Infrastructure;
 public sealed record OAuthClient(string ClientId, string ClientSecret);
 public sealed record OAuthToken(string AccessToken, string RefreshToken, DateTimeOffset Expires, string Scope);
 public sealed record AuthResult(string CredentialId, string? SpreadsheetId);
-public sealed class GoogleAuth(ISecretStore secrets, HttpClient http, OAuthClient? bundledClient = null)
+// defaultClient chỉ dùng khi test; app luôn lấy client đã nhập và lưu trong hồ sơ.
+public sealed class GoogleAuth(ISecretStore secrets, HttpClient http, OAuthClient? defaultClient = null)
 {
     public const string DriveScope = "https://www.googleapis.com/auth/drive.file";
     public const string YouTubeScopes = "https://www.googleapis.com/auth/youtube.upload https://www.googleapis.com/auth/youtube.readonly";
@@ -47,7 +48,7 @@ public sealed class GoogleAuth(ISecretStore secrets, HttpClient http, OAuthClien
         finally { refreshLock.Release(); }
     }
     private readonly SemaphoreSlim refreshLock = new(1, 1);
-    public async Task<bool> HasClientAsync() => await secrets.ReadAsync("oauth-client") is not null || bundledClient is not null;
+    public async Task<bool> HasClientAsync() => await secrets.ReadAsync("oauth-client") is not null || defaultClient is not null;
     public async Task ImportClientAsync(string path)
     {
         var file = new FileInfo(path);
@@ -63,15 +64,15 @@ public sealed class GoogleAuth(ISecretStore secrets, HttpClient http, OAuthClien
         var stored = await secrets.ReadAsync("oauth-client", ct);
         if (stored is not null) return GoogleClientConfiguration.Validate(JsonSerializer.Deserialize<OAuthClient>(stored)
             ?? throw new NeedsAuthException("Cấu hình Google đã lưu không hợp lệ."));
-        return bundledClient is not null ? GoogleClientConfiguration.Validate(bundledClient)
+        return defaultClient is not null ? GoogleClientConfiguration.Validate(defaultClient)
             : throw new NeedsAuthException("Bản cài chưa có cấu hình kết nối Google. Cần chuẩn bị cấu hình ứng dụng một lần trong Thiết lập nâng cao.");
     }
     public async Task<AuthResult> ConnectAsync(bool picker, CancellationToken ct, bool allowYouTubeDeletion = false)
     {
         var requestedScopes = picker ? DriveScope : allowYouTubeDeletion ? YouTubeDeleteScope : YouTubeScopes;
         var client = await ConfiguredClientAsync(ct);
-        // Pin the selected project before granting any token. A future bundled
-        // client must not silently change the project of existing credentials.
+        // Pin the selected project before granting any token. A different client
+        // must not silently change the project of existing credentials.
         await secrets.WriteAsync("oauth-client", JsonSerializer.Serialize(client), ct);
         var verifier = Base64Url(RandomNumberGenerator.GetBytes(64));
         var state = Base64Url(RandomNumberGenerator.GetBytes(32));

@@ -14,7 +14,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-Native.ps1
 - Cần `tools/ffprobe.exe` đúng hash trong `packaging/tool-manifest.public.json`. Clone mới chạy
   `./scripts/Prepare-NativeTools.ps1 -FfprobePath <ffprobe-đúng-hash>` trước.
 - Giữ đường dẫn fixture ngắn; đường dẫn khoảng 250 ký tự làm SQLite báo lỗi 14.
-- Chỉ kiểm tra gói chia sẻ: `./scripts/Build-Native.ps1 -ForSharing -OutputDirectory <thư-mục-mới>`
+- Chỉ kiểm tra gói: `./scripts/Build-Native.ps1 -OutputDirectory <thư-mục-mới>`
   rồi `./scripts/Test-ReleasePackage.ps1 -PackageDirectory <thư-mục-đó>`.
 - Smoke UI: chạy exe đã build với `--data-dir <profile-fixture> --smoke-test <ảnh.png> --smoke-wizard`.
   Không chạy launcher mặc định khi test vì nó dùng profile thật.

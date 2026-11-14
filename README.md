@@ -36,7 +36,7 @@ Tên video tối đa **30 ký tự, gồm dấu cách**, không tách dấu ti�
 
 Chạy **Mo-ung-dung.cmd**, **Start.ps1** hoặc **artifacts/windows-x64-0.3.45/TimVideoHay.exe**. Bản tự chứa .NET/công cụ; không cần Node, Python hoặc .NET SDK. Giữ nguyên cả thư mục khi chuyển máy.
 
-Gói chia sẻ có **Cai-dat.cmd** / **Go-cai-dat.cmd**. Cài vào `%LocalAppData%\Programs\TimVideoHay\0.3.45`, tạo shortcut Start Menu/desktop. Gỡ mặc định giữ dữ liệu. Bản dùng script, chưa có Setup.exe/MSI hoặc mục Installed apps. Xem [INSTALLATION.md](INSTALLATION.md).
+Gói cài có **Cai-dat.cmd** / **Go-cai-dat.cmd**. Cài vào `%LocalAppData%\Programs\TimVideoHay\0.3.45`, tạo shortcut Start Menu/desktop. Gỡ mặc định giữ dữ liệu. Bản dùng script, chưa có Setup.exe/MSI hoặc mục Installed apps. Xem [INSTALLATION.md](INSTALLATION.md).
 
 ## Sử dụng
 
@@ -66,7 +66,7 @@ Bấm **Hướng dẫn sử dụng** trong app để đọc tài liệu offline.
 
 5. Tải/đăng video chạy lần lượt. Công việc chỉ ghi bảng, xóa Google và lượt xác nhận YouTube dùng tối đa bốn lượt xử lý nền; các lượt ghi/xóa cùng file Sheets được thực hiện lần lượt. Nhiều yêu cầu xóa Google cùng lúc vẫn cho xử lý file cục bộ trước khi đợi lượt Google. Xóa trên máy không xếp sau video khác. Các lựa chọn và đích đã lưu không bị đổi khi bạn sửa biểu mẫu/cài đặt cho video tiếp theo.
 
-[GOOGLE-SETUP.md](GOOGLE-SETUP.md) hướng dẫn OAuth, Test users, đổi email/bảng/kênh, chuyển máy/tài khoản Windows và tạo project/Desktop client mới. Bảng và kênh có thể thuộc hai tài khoản khác nhau. Không cần nhập link bảng/kênh. Bản chia sẻ không có cấu hình Google; người nhận tự thiết lập và nhập Desktop JSON.
+[GOOGLE-SETUP.md](GOOGLE-SETUP.md) hướng dẫn OAuth, Test users, đổi email/bảng/kênh, chuyển máy/tài khoản Windows và tạo project/Desktop client mới. Bảng và kênh có thể thuộc hai tài khoản khác nhau. Không cần nhập link bảng/kênh. Bản cài không nhúng cấu hình Google; nhập Desktop JSON một lần ở Thiết lập nâng cao.
 
 **Nguồn Douyin:** video đọc HTTP công khai trước, tự thử WebView khách khi thiếu dữ liệu đúng video và tự dùng tài khoản nếu khách vẫn thiếu dữ liệu bắt buộc. Đọc kênh nguồn khi điền bảng vẫn dùng WebView khách rồi tài khoản nếu cần. Cửa sổ chạy ẩn; CAPTCHA hoặc đăng nhập bắt buộc mới hiện để bạn làm, xong tự ẩn. Không hỏi duyệt chuyển phiên. HTTP 429 thì tạm nghỉ. Xem [DOUYIN-SESSION.md](DOUYIN-SESSION.md). File lớn không giới hạn tổng thời gian tải; không nhận thêm dữ liệu trong 60 giây thì thử lại; đường tải chậm có thể tự kết nối lại có giới hạn. Bấm Tiếp tục dùng link nguồn đã lưu và partial có validator; link bị từ chối/hết hạn mới lấy lại một lần, kiểm tra đúng bản video trước khi nối.
 
@@ -150,7 +150,7 @@ Node/web/extension cũ ở `legacy/browser-v022`, không thuộc build hoặc đ
 
 `scripts/Prepare-NativeTools.ps1`: chuẩn bị ffprobe standalone đúng hash đã ghim. Bộ tải HTTP nội bộ không cần yt-dlp. `scripts/Build-Native.ps1`: build/test/publish Windows x64 tự chứa; máy phát triển cần .NET 10 SDK.
 
-Đóng gói cấu hình Google một lần: `scripts/Build-Native.ps1 -GoogleClientPath <tệp Desktop JSON>`. Build chỉ nhúng client ID/secret, không nhúng token hay tài khoản. Có thể đặt tệp tại `packaging/google-oauth.desktop.json` (đã gitignore). Cấu hình đã lưu trên máy được ưu tiên khi cập nhật app để không đổi project của quyền cũ.
+Chỉ có một bản build, không nhúng cấu hình Google. Nhập tệp OAuth client loại Desktop app một lần ở **Thiết lập nâng cao**; app lưu mã hóa DPAPI trong hồ sơ và dùng tiếp khi cập nhật, nên không đổi project của quyền cũ. Giữ tệp JSON ngoài Git (có thể đặt ở `packaging/google-oauth.desktop.json`, đã gitignore).
 
 `native/TimVideoHay.Core`: mô hình/quy tắc/điều phối. `Infrastructure`: SQLite/DPAPI/OAuth/Sheets/upload/downloader. `Desktop`: XAML/MVVM/tray. `Tests`: kiểm tra console, Google giả lập không thay nghiệm thu thật.
 
@@ -162,7 +162,7 @@ Node/web/extension cũ ở `legacy/browser-v022`, không thuộc build hoặc đ
 
 ## Chia sẻ và bảo mật
 
-Bản chia sẻ nằm trong artifacts/sharing-windows-x64-0.3.45; không gửi bản cá nhân hoặc thư mục dữ liệu. Trong thư mục portable có Cai-dat.cmd, Go-cai-dat.cmd, Install.ps1, Uninstall.ps1 và INSTALLATION.md; không cần mã nguồn. Xem [SECURITY.md](SECURITY.md) để biết cách cài, tự thiết lập Google, bảo vệ dữ liệu và giới hạn của bản chưa ký. Máy phát triển dùng scripts/Build-Native.ps1 -ForSharing; chế độ này cấm nhúng cấu hình Google.
+Bản cài nằm trong artifacts/windows-x64-0.3.45 hoặc ZIP trên GitHub Release (cùng một bản); không gửi thư mục dữ liệu. Trong thư mục portable có Cai-dat.cmd, Go-cai-dat.cmd, Install.ps1, Uninstall.ps1 và INSTALLATION.md; không cần mã nguồn. Xem [SECURITY.md](SECURITY.md) để biết cách cài, tự thiết lập Google, bảo vệ dữ liệu và giới hạn của bản chưa ký. Máy phát triển dùng scripts/Build-Native.ps1; build luôn kiểm tra không có cấu hình Google bị nhúng.
 
 ## Thay đổi ngoài app: di chuyển hoặc xóa thủ công
 

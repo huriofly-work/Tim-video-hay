@@ -26,7 +26,7 @@
 
 ## Dữ liệu riêng tư
 - Kiểm tra app với `--data-dir` trỏ tới fixture riêng. Chỉ dùng tài khoản, bảng, kênh hoặc hồ sơ thật khi có chỉ dẫn riêng.
-- Bảo vệ OAuth JSON, token, cookie, URL CDN ký, hồ sơ, log và gói cá nhân.
-- Bản cài trên máy build bằng `./scripts/Build-Native.ps1` (có thể nhúng OAuth cá nhân); file đính kèm release
-  chỉ là gói `-ForSharing` do `./scripts/Publish-Release.ps1` tạo.
+- Bảo vệ OAuth JSON, token, cookie, URL CDN ký, hồ sơ và log.
+- Chỉ có một bản build (`./scripts/Build-Native.ps1`), không nhúng Google OAuth; dùng chung cho máy mình và file
+  đính kèm release. OAuth client chỉ nhập trong app và lưu DPAPI trong hồ sơ; không thêm lại đường nhúng vào build.
 - Mọi build ghi vào thư mục mới. Không đưa `artifacts/`, hồ sơ hay OAuth JSON lên Git hoặc GitHub.

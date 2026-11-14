@@ -233,13 +233,7 @@ public partial class App : Application
 
             var secrets = new DpapiSecretStore(Path.Combine(DataRoot, "secrets"));
 
-            OAuthClient? bundledClient = null;
-
-            try { bundledClient = await GoogleClientConfiguration.ReadBundledAsync(typeof(App).Assembly); }
-
-            catch (ArgumentException) { /* A bad optional Google configuration must not disable standalone downloads. */ }
-
-            var auth = new GoogleAuth(secrets, http, bundledClient); var transport = new GoogleTransport(auth, http);
+            var auth = new GoogleAuth(secrets, http); var transport = new GoogleTransport(auth, http);
 
             Action<string> sourceNotice = message => Dispatcher.BeginInvoke(() => model?.ReportSourceActivity(message));
 

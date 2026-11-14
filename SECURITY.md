@@ -2,7 +2,7 @@
 
 ## Bản nào được chia sẻ?
 
-Chỉ gửi nguyên thư mục **sharing-windows-x64-0.3.36** hoặc ZIP tạo từ thư mục đó. Không gửi thư mục mã nguồn, bản cá nhân, thư mục dữ liệu app hoặc bộ công cụ phát triển. Bản chia sẻ không nhúng OAuth client/project Google, không chứa token, cookie, lịch sử, cấu hình bảng/kênh hay đường dẫn máy của người đóng gói. Mỗi người tự thiết lập Google theo GOOGLE-SETUP.md; tải Douyin riêng không cần Google.
+Chỉ có một bản build: thư mục `windows-x64-<phiên-bản>` hoặc ZIP trên GitHub Release tạo từ thư mục đó. Không gửi thư mục mã nguồn, thư mục dữ liệu app, tệp OAuth JSON hoặc bộ công cụ phát triển. Bản này không nhúng OAuth client/project Google, không chứa token, cookie, lịch sử, cấu hình bảng/kênh hay đường dẫn máy của người đóng gói. Mỗi người tự thiết lập Google theo GOOGLE-SETUP.md; tải Douyin riêng không cần Google.
 
 Bản hiện tại chưa ký số. Người nhận nên lấy trực tiếp từ người gửi đã biết; Windows có thể cảnh báo. File release-manifest.json và Install.ps1 kiểm tra tính toàn vẹn để phát hiện file hỏng/thiếu/thay đổi. Nếu kẻ khác thay cả gói lẫn manifest, hash không xác thực được nhà phát hành. Không tắt Defender hoặc SmartScreen để cài. MSIX/chữ ký số là tùy chọn tương lai, không bắt buộc cho bản portable thử nghiệm này.
 
@@ -42,13 +42,13 @@ Bộ tải dùng đoạn 32 MiB và tối đa ba lần thử cho lỗi mạng li
 
 ## Quy trình đóng gói và kiểm tra
 
-Máy phát triển chạy `scripts/Build-Native.ps1 -ForSharing` vào một thư mục đầu ra mới. Chế độ này từ chối GoogleClientPath và không tự lấy packaging/google-oauth.desktop.json. Bản cá nhân dùng lệnh build thường; không gửi bản đó cho người khác.
+Máy phát triển chạy `scripts/Build-Native.ps1` vào một thư mục đầu ra mới. Build không có cách nhúng Google OAuth; gate `--check-bundle` từ chối gói có manifest resource tên Google/OAuth.
 
 Build khóa dependency theo packages.lock.json, bỏ file PDB và metadata origin trên máy phát triển, chỉ thêm tài liệu/công cụ đã chỉ định. Gate kiểm tra tên file nhạy cảm, tài liệu/binary của app có đường dẫn/tài khoản cá nhân, hash công cụ, OAuth resource rỗng và manifest toàn gói. Gate là kiểm tra theo chính sách cụ thể, không phải máy dò mọi loại secret hoặc chứng nhận an toàn.
 
 Trước phát hành rộng rãi: kiểm tra trên Windows sạch và tài khoản khác; rà soát các dependency/lỗ hổng mới; hoàn thiện notices và nguồn tương ứng của ffprobe/dependency; kiểm tra Google thật, cài/nâng cấp/gỡ app và luồng tải sau gián đoạn. Bản portable thử nghiệm chưa được nghiệm thu máy sạch hoặc kiểm toán độc lập. Phần giấy phép công cụ cần hoàn thiện trước phát hành công khai.
 
-Người dùng tự quản lý project Google và các yêu cầu Test users/xác minh OAuth/upload audit của project mình. Không cần chứng thư ký số hoặc project Google chung để bắt đầu sử dụng bản chia sẻ này.
+Người dùng tự quản lý project Google và các yêu cầu Test users/xác minh OAuth/upload audit của project mình. Không cần chứng thư ký số hoặc project Google chung để bắt đầu sử dụng bản này.
 
 ## Hạn chế dùng tài khoản Douyin
 
@@ -60,7 +60,7 @@ Thư mục mất ở đường dẫn cũ không tự được coi là đã xóa.
 
 Theo lựa chọn người dùng, GET YouTube thành công trên đúng kênh nhưng không còn ID được coi là đã xóa thủ công và tự cập nhật local. Lỗi HTTP/OAuth/mạng/dữ liệu không hợp lệ không coi là xóa. Cơ chế này thay hướng xác nhận trong 0.3.21; không xin quyền xóa cho video đã mất.
 
-Tìm thư mục dùng mã Windows (kiểm tra volume, ID, ngày tạo để hạn chế tái sử dụng ID), chỉ mục Windows hoặc duyệt đích đã dùng có giới hạn; chạy nền và hủy được, không cần admin/dịch vụ nền. Xác minh hash trước nhận quyền quản lý; không nhận junction/file lạ/thùng rác/nhiều bản giống nhau. Cache/ownership marker cập nhật theo đường dẫn đã đối chiếu. Mã định danh chỉ lưu trong payload công việc mã hóa, không xuất vào gói chia sẻ.
+Tìm thư mục dùng mã Windows (kiểm tra volume, ID, ngày tạo để hạn chế tái sử dụng ID), chỉ mục Windows hoặc duyệt đích đã dùng có giới hạn; chạy nền và hủy được, không cần admin/dịch vụ nền. Xác minh hash trước nhận quyền quản lý; không nhận junction/file lạ/thùng rác/nhiều bản giống nhau. Cache/ownership marker cập nhật theo đường dẫn đã đối chiếu. Mã định danh chỉ lưu trong payload công việc mã hóa, không xuất vào gói cài.
 
 0.3.35 bổ sung đọc metadata đúng đường dẫn tên công việc ngay dưới gốc ổ cứng/USB sẵn sàng. Không duyệt toàn ổ, không dò ổ mạng; không nhận quyền quản lý nếu hash sai, có file lạ hay nhiều bản khớp.
 

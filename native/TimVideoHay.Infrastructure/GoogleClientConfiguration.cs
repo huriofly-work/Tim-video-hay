@@ -1,11 +1,10 @@
-using System.Reflection;
 using System.Text.Json;
 
 namespace TimVideoHay.Infrastructure;
 
+// OAuth client chỉ đến từ file JSON người dùng nhập trong app rồi lưu DPAPI; bản build không nhúng client nào.
 public static class GoogleClientConfiguration
 {
-    public const string ResourceName = "TimVideoHay.GoogleOAuthDesktop.json";
     public static OAuthClient ParseDesktop(string json)
     {
         if (System.Text.Encoding.UTF8.GetByteCount(json) > 64 * 1024) throw new ArgumentException("Tệp cấu hình Google quá lớn.");
@@ -30,13 +29,5 @@ public static class GoogleClientConfiguration
             || client.ClientSecret.Any(c => char.IsControl(c) || char.IsWhiteSpace(c)))
             throw new ArgumentException("Cấu hình Google Desktop không hợp lệ.");
         return client;
-    }
-    public static async Task<OAuthClient?> ReadBundledAsync(Assembly assembly)
-    {
-        await using var input = assembly.GetManifestResourceStream(ResourceName);
-        if (input is null) return null;
-        if (input.Length > 64 * 1024) throw new ArgumentException("Cấu hình Google đóng gói quá lớn.");
-        using var reader = new StreamReader(input);
-        return ParseDesktop(await reader.ReadToEndAsync());
     }
 }

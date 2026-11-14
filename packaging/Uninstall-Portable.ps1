@@ -71,6 +71,13 @@ if (Test-Path -LiteralPath $installDir) {
 }
 if (-not $NoShortcuts) {
     $shell = New-Object -ComObject WScript.Shell
+    # WScript.Shell không đọc đúng tên ngoài bảng mã ANSI (vd. chữ "ỡ"): đọc qua bản sao tên ASCII tạm.
+    function Read-Shortcut([string]$Path) {
+        $temporary = Join-Path ([IO.Path]::GetTempPath()) ('TimVideoHay-' + [guid]::NewGuid().ToString('N') + '.lnk')
+        Copy-Item -LiteralPath $Path -Destination $temporary
+        try { $link = $shell.CreateShortcut($temporary); return [pscustomobject]@{ TargetPath = $link.TargetPath; Arguments = $link.Arguments } }
+        finally { Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue }
+    }
     $shortcuts = @(
         @{ Path = (Join-Path ([Environment]::GetFolderPath('Programs')) 'Tìm video hay.lnk'); Target = $appPath },
         @{ Path = (Join-Path ([Environment]::GetFolderPath('Desktop')) 'Tìm video hay.lnk'); Target = $appPath }
@@ -78,13 +85,13 @@ if (-not $NoShortcuts) {
     foreach ($item in $shortcuts) {
         if (Test-Path -LiteralPath $item.Path) {
             Assert-NoLink $item.Path
-            if ($shell.CreateShortcut($item.Path).TargetPath.Equals($item.Target,[StringComparison]::OrdinalIgnoreCase)) { Remove-Item -LiteralPath $item.Path -Force }
+            if ((Read-Shortcut $item.Path).TargetPath.Equals($item.Target,[StringComparison]::OrdinalIgnoreCase)) { Remove-Item -LiteralPath $item.Path -Force }
         }
     }
     $uninstallLink = Join-Path ([Environment]::GetFolderPath('Programs')) ("Gỡ Tìm video hay " + $source.version + '.lnk')
     if (Test-Path -LiteralPath $uninstallLink) {
         Assert-NoLink $uninstallLink
-        $shortcut = $shell.CreateShortcut($uninstallLink)
+        $shortcut = Read-Shortcut $uninstallLink
         $expected = '-NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $installDir 'Uninstall.ps1') + '"'
         if ($shortcut.Arguments -eq $expected) { Remove-Item -LiteralPath $uninstallLink -Force }
     }

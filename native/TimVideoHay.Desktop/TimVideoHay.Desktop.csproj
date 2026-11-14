@@ -10,7 +10,5 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4258.31" />
     <ProjectReference Include="../TimVideoHay.Infrastructure/TimVideoHay.Infrastructure.csproj" />
-    <EmbeddedResource Include="$(GoogleOAuthClientPath)" LogicalName="TimVideoHay.GoogleOAuthDesktop.json" Condition="'$(GoogleOAuthClientPath)' != '' and Exists('$(GoogleOAuthClientPath)')" />
   </ItemGroup>
-  <Target Name="RequireGoogleClientFile" BeforeTargets="BeforeBuild" Condition="'$(GoogleOAuthClientPath)' != '' and !Exists('$(GoogleOAuthClientPath)')"><Error Text="Google OAuth Desktop configuration file was not found."/></Target>
 </Project>

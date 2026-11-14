@@ -10,14 +10,12 @@ Directory.CreateDirectory(root);
 var bundleIndex = Array.IndexOf(args, "--check-bundle");
 if (bundleIndex >= 0)
 {
+    // Bản build duy nhất không được mang OAuth client: chặn mọi manifest resource có tên Google/OAuth.
     var assembly = System.Reflection.Assembly.LoadFile(Path.GetFullPath(args[bundleIndex + 1]));
-    var client = await GoogleClientConfiguration.ReadBundledAsync(assembly);
-    var expected = args.Contains("--expect-bundled");
-    if ((client is not null) != expected) throw new Exception("Bundled configuration state mismatch");
-    using var resource = assembly.GetManifestResourceStream(GoogleClientConfiguration.ResourceName);
-    if (resource is not null) { using var reader = new StreamReader(resource); var json = await reader.ReadToEndAsync(); if (json.Contains("DO_NOT_BUNDLE") || json.Contains("refresh_token")) throw new Exception("Bundled config contains extra token fields"); }
-    await File.WriteAllTextAsync(Path.Combine(root, "bundle-check.json"), JsonSerializer.Serialize(new { configurationBundled = client is not null, tokensExcluded = true, diagnostic = "Resource/format check only; no real Google authorization" }));
-    Console.WriteLine("PASS bundled Google configuration resource and token exclusion"); return 0;
+    var oauthResources = assembly.GetManifestResourceNames().Where(name => name.Contains("oauth", StringComparison.OrdinalIgnoreCase) || name.Contains("google", StringComparison.OrdinalIgnoreCase)).ToArray();
+    if (oauthResources.Length > 0) throw new Exception("Build must not embed Google OAuth configuration: " + string.Join(", ", oauthResources));
+    await File.WriteAllTextAsync(Path.Combine(root, "bundle-check.json"), JsonSerializer.Serialize(new { configurationBundled = false, diagnostic = "Manifest resource name check only; no real Google authorization" }));
+    Console.WriteLine("PASS no bundled Google OAuth configuration"); return 0;
 }
 var publicIndex = Array.IndexOf(args, "--probe-public");
 if (publicIndex >= 0)
@@ -742,7 +740,10 @@ await Test("Có cấu hình sẵn thì không cần nhập JSON và không tự 
     var vault = new MemorySecrets(); using var http = new HttpClient(new ScriptedHandler(_ => throw new Exception("Unexpected network")));
     var client = GoogleClientConfiguration.ParseDesktop(DesktopClient()); var auth = new GoogleAuth(vault, http, client);
     Assert(await auth.HasClientAsync() && await auth.ConfiguredClientAsync() == client);
-    Assert(await vault.ReadAsync("oauth-client") is null && await GoogleClientConfiguration.ReadBundledAsync(typeof(GoogleAuth).Assembly) is null);
+    Assert(await vault.ReadAsync("oauth-client") is null);
+    var empty = new GoogleAuth(new MemorySecrets(), http);
+    Assert(!await empty.HasClientAsync());
+    await Throws<NeedsAuthException>(() => empty.ConfiguredClientAsync());
 });
 await Test("Cập nhật cấu hình đóng gói không đổi project của token đang dùng", async () => {
     var vault = new MemorySecrets(); var oldClient = GoogleClientConfiguration.ParseDesktop(DesktopClient("123-old.apps.googleusercontent.com"));
