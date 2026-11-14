@@ -2,7 +2,7 @@
   <ItemGroup>
     <EmbeddedResource Include="../../packaging/tool-manifest.public.json" LogicalName="TimVideoHay.ToolManifest.json" />
     <ProjectReference Include="../TimVideoHay.Core/TimVideoHay.Core.csproj" />
-    <PackageReference Include="Microsoft.Data.Sqlite" Version="10.0.12" />
-    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.12" />
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="11.0.0" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="11.0.0" />
   </ItemGroup>
 </Project>
