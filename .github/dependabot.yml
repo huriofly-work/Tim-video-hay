@@ -8,6 +8,9 @@ updates:
       - /native/TimVideoHay.Tests
     schedule:
       interval: weekly
+    # Chỉ đề xuất bản đã phát hành ít nhất 14 ngày; cập nhật bảo mật không bị chờ.
+    cooldown:
+      default-days: 14
     groups:
       nuget:
         patterns:
@@ -17,6 +20,8 @@ updates:
     directory: /
     schedule:
       interval: monthly
+    cooldown:
+      default-days: 14
     groups:
       github-actions:
         patterns:
