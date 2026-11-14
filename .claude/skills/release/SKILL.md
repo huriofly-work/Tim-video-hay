@@ -22,13 +22,15 @@ tạo tag, upload và động vào bản cài thật.
   release đã lên GitHub, khi người dùng đồng ý.
 
 ## 2. Cài trên máy
-- `./scripts/Build-Native.ps1` build vào `artifacts/windows-x64-<VERSION>`, rồi
-  `./packaging/Install-Local.ps1` cài vào `%LOCALAPPDATA%\Programs\TimVideoHay\<VERSION>`; bản cũ được giữ.
+- Chỉ có một bản build (không nhúng OAuth), giống hệt file release. `./scripts/Build-Native.ps1` build vào
+  `artifacts/windows-x64-<VERSION>` (hoặc giải nén zip release vào đó), rồi `./packaging/Install-Local.ps1`
+  cài vào `%LOCALAPPDATA%\Programs\TimVideoHay\<VERSION>`; bản cũ được giữ.
 - Build lại cùng `VERSION`: xoá `artifacts/windows-x64-<VERSION>` cũ trước, vì script từ chối ghi đè
   và `Install-Local.ps1` chỉ tìm thư mục mặc định.
 
 ## 3. Khôi phục (máy mới hoặc cài lại Windows)
-- Tải zip từ GitHub Release, so SHA-256, giải nén rồi chạy `Cai-dat.cmd`; kết nối Google lại qua wizard.
+- Tải zip từ GitHub Release, so SHA-256, giải nén rồi chạy `Cai-dat.cmd`. Hồ sơ mới: nhập OAuth client JSON
+  (bản riêng của chủ repo, giữ ngoài Git) ở Thiết lập nâng cao rồi kết nối Google qua wizard.
 - Release không chứa OAuth JSON và không sao lưu hồ sơ người dùng (`%LOCALAPPDATA%\TimVideoHay`,
   mã hoá DPAPI theo user Windows).
 

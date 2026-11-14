@@ -36,21 +36,21 @@ foreach ($entry in $release.files) {
 Copy-Item -LiteralPath (Join-Path $sourceRoot 'release-manifest.json') -Destination $installDir
 if (-not $NoShortcuts) {
 $shell = New-Object -ComObject WScript.Shell
+# WScript.Shell không lưu được tên ngoài bảng mã ANSI (vd. chữ "ỡ"): lưu dưới tên ASCII tạm rồi đổi sang tên thật.
+function Save-Shortcut([string]$Path, [string]$Target, [string]$Arguments, [string]$WorkingDirectory) {
+    Assert-NoLink $Path
+    $temporary = Join-Path ([IO.Path]::GetDirectoryName($Path)) ('TimVideoHay-' + [guid]::NewGuid().ToString('N') + '.lnk')
+    $shortcut = $shell.CreateShortcut($temporary)
+    $shortcut.TargetPath = $Target; $shortcut.WorkingDirectory = $WorkingDirectory
+    if ($Arguments) { $shortcut.Arguments = $Arguments }
+    $shortcut.Save()
+    Move-Item -LiteralPath $temporary -Destination $Path -Force
+}
 $shortcutPaths = @((Join-Path ([Environment]::GetFolderPath('Programs')) 'Tìm video hay.lnk'))
 if ($DesktopShortcut) { $shortcutPaths += Join-Path ([Environment]::GetFolderPath('Desktop')) 'Tìm video hay.lnk' }
-foreach ($shortcutPath in $shortcutPaths) {
-    Assert-NoLink $shortcutPath
-    $shortcut = $shell.CreateShortcut($shortcutPath)
-    $shortcut.TargetPath = Join-Path $installDir 'TimVideoHay.exe'; $shortcut.WorkingDirectory = $installDir
-    $shortcut.Save()
-}
+foreach ($shortcutPath in $shortcutPaths) { Save-Shortcut $shortcutPath (Join-Path $installDir 'TimVideoHay.exe') '' $installDir }
 $uninstallShortcutPath = Join-Path ([Environment]::GetFolderPath('Programs')) ("Gỡ Tìm video hay " + $release.version + '.lnk')
-Assert-NoLink $uninstallShortcutPath
-$uninstall = $shell.CreateShortcut($uninstallShortcutPath)
-$uninstall.TargetPath = Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe'
-$uninstall.Arguments = '-NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $installDir 'Uninstall.ps1') + '"'
-$uninstall.WorkingDirectory = $installDir
-$uninstall.Save()
+Save-Shortcut $uninstallShortcutPath (Join-Path $env:SystemRoot 'System32/WindowsPowerShell/v1.0/powershell.exe') ('-NoProfile -ExecutionPolicy Bypass -File "' + (Join-Path $installDir 'Uninstall.ps1') + '"') $installDir
 }
 Write-Host "Installed for current Windows account: $installDir"
 Write-Host 'Each recipient connects their own Google accounts. Checksums detect corruption, not a forged package whose manifest was also replaced.'

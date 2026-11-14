@@ -2,7 +2,7 @@
 
 Cập nhật ngày 14/11/2026. Dành cho Claude Code tiếp tục trên thư mục local chứa repo này.
 
-**Phạm vi sử dụng:** app do chủ repo tự dùng trên máy mình; mã nguồn công khai trên GitHub nhưng chưa cấp license (mọi quyền được bảo lưu). Release (tag `v<VERSION>` + GitHub Release, đính kèm gói `-ForSharing`) dùng để quản lý phiên bản và sao lưu bản cài; vì repo public nên file đính kèm ai cũng tải được. Quy trình ở mục "Release và cài bản mới" của `CLAUDE.md`.
+**Phạm vi sử dụng:** app do chủ repo tự dùng trên máy mình; mã nguồn công khai trên GitHub nhưng chưa cấp license (mọi quyền được bảo lưu). Release (tag `v<VERSION>` + GitHub Release, đính kèm bản build duy nhất, không nhúng Google OAuth) dùng để quản lý phiên bản và sao lưu bản cài; vì repo public nên file đính kèm ai cũng tải được. Quy trình ở mục "Release và cài bản mới" của `CLAUDE.md`.
 
 ## 1. Mã nguồn cần tiếp nhận
 
@@ -50,7 +50,7 @@ foreach ($name in 'Desktop', 'Tests') {
     $project = "native/TimVideoHay.$name"
     dotnet restore $project --locked-mode --configfile native/NuGet.Config
     if ($LASTEXITCODE) { throw "Restore thất bại: $project" }
-    dotnet build $project -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:GoogleOAuthClientPath=
+    dotnet build $project -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
     if ($LASTEXITCODE) { throw "Build thất bại: $project" }
 }
 $fixture = 'test-output/native-' + [guid]::NewGuid().ToString('N')
@@ -62,8 +62,8 @@ dotnet run --project native/TimVideoHay.Tests -c Release --no-build --no-restore
 - **UI:** smoke gói sharing 0.3.44 exit 0. Chạy WPF/WebView2 với profile riêng, fixture lịch sử 127 job, kiểm tra điều khiển và wizard ba bước dùng Google giả lập. Báo cáo tại `test-output/handoff-wpf-497ea85756b04a0bbad5f5e26953cf02/app.png.json` và `wizard.json`. Lượt này chưa nghiệm thu qua launcher mặc định, đăng nhập hoặc tải/đăng thật.
 - **Lint/check:** `./scripts/Test-WindowsLaunchers.ps1` qua kiểm tra BOM và parser cho 9 script trên PowerShell 5.1 và 7.6.5. `git diff --check` exit 0 với cảnh báo LF/CRLF của file cũ. Không thấy lệnh lint C# riêng hay CI trong cây nguồn. Build coi warning là error.
 - **Run:** launcher người dùng là `./Start.ps1`, `Mo-ung-dung.cmd` hoặc `TimVideoHay.exe` trong gói. Khi kiểm tra, gọi exe trực tiếp với `--data-dir <profile-fixture>` và `--smoke-test <ảnh-png> --smoke-wizard`. Launcher mặc định dùng profile thật.
-- **Đóng gói:** `./scripts/Build-Native.ps1 -ForSharing -OutputDirectory <thư-mục-mới>` build/test/publish bản chia sẻ. `-SkipPublish -NoBundledGoogle` dùng khi chỉ cần build/test qua wrapper. Khi publish, gate OAuth gọi runner với `--no-build` ngay cả khi dùng `-SkipTests`, nên cần runner Release đã build. Bản cá nhân có thể nhúng Desktop OAuth JSON qua `-GoogleClientPath`. Cấu hình riêng qua wizard hoặc file riêng được ignore, không cần biến môi trường bí mật. `DOTNET_CLI_HOME` và `NUGET_PACKAGES` dùng cho cache khi build, `LOCALAPPDATA` dành cho hồ sơ/cài đặt.
-- **Gói có sẵn:** `./scripts/Test-ReleasePackage.ps1 -PackageDirectory artifacts/sharing-windows-x64-0.3.44` đạt kiểm tra privacy/file policy, tool integrity và manifest, **501 file**. `--check-bundle` của console runner xác nhận gói sharing không nhúng Google OAuth. Lượt này dùng gói đã có và build mã local, chưa publish mới, chưa chạy lifecycle cài/gỡ, chưa thao tác trên tài khoản hay công việc thật. Bằng chứng lịch sử 0.3.44 cho cả personal/sharing nằm cuối [VALIDATION.md](../VALIDATION.md).
+- **Đóng gói:** từ sau 0.3.45 chỉ còn một bản build. `./scripts/Build-Native.ps1 [-OutputDirectory <thư-mục-mới>]` build/test/publish vào `artifacts/windows-x64-<VERSION>`; bản này không nhúng Google OAuth và dùng chung cho máy mình lẫn release. `-SkipPublish` dùng khi chỉ cần build/test qua wrapper. Khi publish, gate `--check-bundle` gọi runner với `--no-build` ngay cả khi dùng `-SkipTests`, nên cần runner Release đã build. OAuth client chỉ nhập trong app (Thiết lập nâng cao) và lưu DPAPI trong hồ sơ, không cần biến môi trường bí mật. `DOTNET_CLI_HOME` và `NUGET_PACKAGES` dùng cho cache khi build, `LOCALAPPDATA` dành cho hồ sơ/cài đặt.
+- **Gói có sẵn (05/11/2026, trước khi gộp một bản):** `./scripts/Test-ReleasePackage.ps1 -PackageDirectory artifacts/sharing-windows-x64-0.3.44` đạt kiểm tra privacy/file policy, tool integrity và manifest, **501 file**. `--check-bundle` của console runner xác nhận gói không nhúng Google OAuth. Lượt này dùng gói đã có và build mã local, chưa publish mới, chưa chạy lifecycle cài/gỡ, chưa thao tác trên tài khoản hay công việc thật. Bằng chứng lịch sử 0.3.44 cho cả personal/sharing nằm cuối [VALIDATION.md](../VALIDATION.md).
 
 ## 5. Việc tiếp theo và tiêu chí hoàn thành
 

@@ -22,7 +22,7 @@ try {
         $project = "native/TimVideoHay.$name"
         dotnet restore $project --locked-mode --configfile native/NuGet.Config
         if ($LASTEXITCODE -ne 0) { throw "Restore thất bại: $project" }
-        dotnet build $project -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false -p:GoogleOAuthClientPath=
+        dotnet build $project -c Release --no-restore -m:1 -nr:false -p:UseSharedCompilation=false
         if ($LASTEXITCODE -ne 0) { throw "Build thất bại: $project" }
     }
     dotnet run --project native/TimVideoHay.Tests -c Release --no-build --no-restore -- $fixturePath

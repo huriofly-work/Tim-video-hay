@@ -40,7 +40,7 @@ Cập nhật 10/10/2026. Tài liệu dành cho người tự cài app, quản l�
 
 ## 1. Trạng thái hiện tại và chọn đúng trường hợp
 
-Bản chia sẻ không tự lấy project hoặc tài khoản cá nhân của người đóng gói. Bản chia sẻ không nhúng Desktop client. làm mục 7–8 để tạo project/Desktop client của bạn, nhập JSON trong Thiết lập Google nâng cao rồi kết nối. Chỉ tải Douyin không cần Google.
+Bản cài không tự lấy project hoặc tài khoản cá nhân của người đóng gói và không nhúng Desktop client. Làm mục 7–8 để tạo project/Desktop client của bạn, nhập JSON trong Thiết lập Google nâng cao rồi kết nối. Chỉ tải Douyin không cần Google.
 
 Đăng nhập tài khoản của chính bạn. Không cần tài khoản Google Cloud của nhà phát hành, không nhận token/cookie/lịch sử của họ. Project ở Testing cần chủ project thêm email của bạn vào Test users; video được đăng theo chế độ bạn chọn.
 
@@ -66,7 +66,7 @@ Ba loại tài khoản có thể khác nhau: tài khoản quản lý Cloud proje
 
 Hướng dẫn cài/cập nhật/gỡ đầy đủ: [INSTALLATION.md](INSTALLATION.md).
 
-1. Giải nén nguyên gói ZIP chia sẻ sang thư mục riêng, giữ EXE/DLL/tools/tài liệu cùng nhau. Không chỉ chép một EXE, không gửi bản cá nhân hay hồ sơ dữ liệu cho người khác.
+1. Giải nén nguyên gói ZIP sang thư mục riêng, giữ EXE/DLL/tools/tài liệu cùng nhau. Không chỉ chép một EXE, không gửi hồ sơ dữ liệu hay tệp OAuth JSON cho người khác.
 
 2. Mở TimVideoHay.exe để dùng portable, hoặc Cai-dat.cmd để cài và tạo shortcut. Không cần mã nguồn, Node/Python/.NET SDK hoặc quyền Administrator.
 
@@ -74,7 +74,7 @@ Hướng dẫn cài/cập nhật/gỡ đầy đủ: [INSTALLATION.md](INSTALLATI
 
 4. Chọn thư mục trong Xử lý video; chỉ tích Tải video để thử trước khi kết nối Google.
 
-5. Bản chia sẻ không nhúng Google client. Tạo project/Desktop client của chính bạn theo mục 7–8, nhập JSON vào app rồi kết nối bảng/kênh theo mục 3. Email mới trong Testing cần mục 4.
+5. Bản cài không nhúng Google client. Tạo project/Desktop client của chính bạn theo mục 7–8, nhập JSON vào app rồi kết nối bảng/kênh theo mục 3. Email mới trong Testing cần mục 4.
 
 Muốn chạy PowerShell thủ công từ thư mục giải nén:
 
@@ -294,19 +294,11 @@ Khai báo scope không cấp quyền dữ liệu; người dùng vẫn OAuth t�
 
 6. Mo-ung-dung.cmd/shortcut mặc định vẫn mở hồ sơ mặc định. App chưa có giao diện chọn/chuyển hồ sơ; tránh nhầm hai hồ sơ. Job mới bắt đầu ở lịch sử mới, không chuyển job cũ sang project mới.
 
-Bản chia sẻ không có client nhúng; hồ sơ sạch cho phép nhập client của bạn trước lần kết nối đầu tiên. Bản cá nhân có client nhúng vẫn cho phép nhập client riêng khi chưa lưu quyền. Client riêng đã lưu sẽ được ưu tiên. Nếu báo đã có client khác, đường dẫn hồ sơ đã từng được dùng; chọn một đường dẫn sạch khác, không xóa dữ liệu cũ.
+Bản cài không có client nhúng; hồ sơ sạch cho phép nhập client của bạn trước lần kết nối đầu tiên. Client đã lưu trong hồ sơ được dùng cho mọi lần sau, kể cả khi cập nhật app. Nếu báo đã có client khác, đường dẫn hồ sơ đã từng được dùng; chọn một đường dẫn sạch khác, không xóa dữ liệu cũ.
 
-### Đóng gói client mới để chuyển máy
+### Chuyển máy
 
-Không cần build nếu đã nhập JSON theo cách trên. Nếu muốn client mới đi sẵn trong bản app, người phát triển cần .NET 10 SDK và công cụ đã chuẩn bị. Trong thư mục mã nguồn, chạy:
-
-```powershell
-
-./scripts/Build-Native.ps1 -GoogleClientPath 'C:\duong-dan\desktop-client-moi.json' -OutputDirectory 'D:\TimVideoHay-ProjectMoi'
-
-```
-
-Build/test/publish vào thư mục mới, chỉ nhúng client ID/secret; không nhúng token. Giữ nguyên bản và hồ sơ cũ. Bản mới vẫn cần hồ sơ dữ liệu riêng khi dùng trên Windows đang có client cũ; đổi binary không tự đổi client đã lưu. Sang Windows/máy sạch, dùng bản đóng gói mới rồi đăng nhập như mục 3.
+Không cần build lại. Trên Windows/máy sạch, cài bản từ GitHub Release, nhập tệp Desktop client JSON ở Thiết lập Google nâng cao rồi đăng nhập như mục 3. Giữ tệp JSON ở nơi riêng, không đưa lên Git hay gửi kèm gói cài.
 
 ## 9. Chuyển Testing sang In production
 

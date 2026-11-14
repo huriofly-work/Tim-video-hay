@@ -24,7 +24,7 @@ Gói vẫn dùng file EXE. Cai-dat.cmd cài từ gói portable, chưa phải Set
 
 4. Mở app, chọn thư mục tại Xử lý video, chỉ tích Tải video để thử một link trước.
 
-5. Sheets/YouTube: xem [GOOGLE-SETUP.md](GOOGLE-SETUP.md), mục 7–8 để tạo project/Desktop client riêng, rồi kết nối bảng/tab và kênh trong app. Bản chia sẻ không có Google client của người đóng gói; tải riêng không cần Google.
+5. Sheets/YouTube: xem [GOOGLE-SETUP.md](GOOGLE-SETUP.md), mục 7–8 để tạo project/Desktop client riêng, rồi kết nối bảng/tab và kênh trong app. Bản cài không nhúng Google client; tải riêng không cần Google.
 
 6. Douyin ưu tiên phiên của app và nguồn tự động; khi cần đăng nhập/xác minh, làm [DOUYIN-SESSION.md](DOUYIN-SESSION.md). Không xuất cookie hoặc cài extension. Nếu chưa có WebView2 Runtime, xem mục 7.
 
@@ -92,7 +92,7 @@ Gỡ app/xóa token local **không tự thu hồi quyền Google**. Muốn thu h
 
 ## 6. Đổi máy/tài khoản và xử lý lỗi
 
-- **Máy mới/người khác:** chỉ gửi ZIP chia sẻ sạch, cài mới rồi kết nối Google lại. Không gửi hồ sơ `%LocalAppData%\TimVideoHay`, cookie, lịch sử hoặc bản cá nhân có bundle Google. DPAPI gắn với máy/tài khoản Windows, không chuyển nguyên database/credential. Video/ảnh sao chép bình thường.
+- **Máy mới/người khác:** dùng ZIP từ GitHub Release, cài mới, nhập OAuth client JSON rồi kết nối Google lại. Không gửi hồ sơ `%LocalAppData%\TimVideoHay`, cookie, lịch sử hoặc tệp OAuth JSON. DPAPI gắn với máy/tài khoản Windows, không chuyển nguyên database/credential. Video/ảnh sao chép bình thường.
 
 - **Đổi email/bảng/kênh/project:** xem mục 4–8 của [GOOGLE-SETUP.md](GOOGLE-SETUP.md). Bảng và kênh có thể dùng hai tài khoản khác nhau. Đổi project khi còn công việc dở cần hồ sơ riêng, không ghi đè credential cũ.
 

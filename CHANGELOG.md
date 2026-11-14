@@ -2,6 +2,16 @@
 
 Mỗi bản ghi một mục, mới nhất ở trên. Bằng chứng kiểm tra chi tiết của từng phiên bản nằm ở `VALIDATION.md`, đặc tả ở `SPEC.md`.
 
+## [Unreleased]
+
+### Changed
+- Chỉ còn một bản build, không nhúng Google OAuth, dùng chung cho máy mình và file đính kèm release. Bỏ chế độ build cá nhân (`-GoogleClientPath`, tự nhúng `packaging/google-oauth.desktop.json`) và cờ `-ForSharing`/`-NoBundledGoogle`. Hồ sơ đã kết nối Google dùng tiếp OAuth client đã lưu; hồ sơ mới nhập tệp Desktop JSON một lần ở Thiết lập nâng cao.
+- App không còn đọc OAuth client nhúng trong exe. Gate `--check-bundle` từ chối gói có manifest resource tên Google/OAuth.
+- Build tự xoá bản sao OAuth client cũ ở `tools/dotnet-home/google-oauth.bundle.json` nếu còn.
+
+### Fixed
+- Cài đặt không còn dừng ở bước tạo shortcut "Gỡ Tìm video hay <phiên bản>": WScript.Shell không lưu/đọc được tên có chữ ngoài bảng mã ANSI (vd. "ỡ"), nên `Install.ps1`/`Uninstall.ps1` lưu và đọc shortcut qua tên ASCII tạm.
+
 ## [0.3.45] - 2026-11-14
 
 Bản đầu tiên trên repo public. Chức năng tải, bìa, Google Sheets và YouTube giữ nguyên như 0.3.44.

@@ -1,5 +1,5 @@
 ﻿param([switch]$DryRun)
-# Tạo release để quản lý phiên bản và sao lưu bản cài: build gói -ForSharing (không nhúng Google OAuth),
+# Tạo release để quản lý phiên bản và sao lưu bản cài: build bản duy nhất (không nhúng Google OAuth),
 # kiểm tra gói, nén zip + SHA-256, gắn tag v<VERSION> rồi tạo GitHub Release. Repo public: release ai cũng tải được.
 # -DryRun chạy mọi bước trừ gắn/push tag và tạo release. Không bao giờ đưa hồ sơ, OAuth JSON hay log lên GitHub.
 $ErrorActionPreference = 'Stop'
@@ -83,10 +83,10 @@ try {
 
     $stamp = Get-Date -Format 'yyyyMMdd-HHmmss'
     $releaseDir = Join-Path $taskRoot "artifacts/release-$appVersion-$stamp"
-    $packageDir = Join-Path $releaseDir "sharing-windows-x64-$appVersion"
+    $packageDir = Join-Path $releaseDir "windows-x64-$appVersion"
     New-Item -ItemType Directory -Path $releaseDir | Out-Null
-    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Build-Native.ps1') -ForSharing -OutputDirectory $packageDir
-    if ($LASTEXITCODE -ne 0) { throw 'Build/test/publish gói chia sẻ thất bại.' }
+    & powershell.exe -NoProfile -ExecutionPolicy Bypass -File (Join-Path $PSScriptRoot 'Build-Native.ps1') -OutputDirectory $packageDir
+    if ($LASTEXITCODE -ne 0) { throw 'Build/test/publish thất bại.' }
 
     $zipName = "TimVideoHay-$appVersion-windows-x64.zip"
     $zipPath = Join-Path $releaseDir $zipName
@@ -117,7 +117,7 @@ try {
     $shaPath = "$zipPath.sha256"
     [IO.File]::WriteAllText($shaPath, "$zipHash  $zipName`n", [Text.UTF8Encoding]::new($false))
     $notesPath = Join-Path $releaseDir 'release-notes.md'
-    $notes = $section.Groups[1].Value.Trim() + "`n`n---`nCommit: $head`nSHA-256 ($zipName): $zipHash`nGói -ForSharing, không nhúng Google OAuth. Sau khi cài, kết nối Google lại qua wizard. Hồ sơ người dùng không nằm trong release.`n"
+    $notes = $section.Groups[1].Value.Trim() + "`n`n---`nCommit: $head`nSHA-256 ($zipName): $zipHash`nGói không nhúng Google OAuth. Hồ sơ đã kết nối Google dùng tiếp như cũ; hồ sơ mới nhập OAuth client một lần trong Thiết lập nâng cao. Hồ sơ người dùng không nằm trong release.`n"
     [IO.File]::WriteAllText($notesPath, $notes, [Text.UTF8Encoding]::new($false))
     # Build mất vài phút: nếu cây code, HEAD hoặc VERSION đổi trong lúc đó thì zip không còn khớp commit sẽ gắn tag.
     Assert-ReleaseReady (-not (git status --porcelain)) 'Working tree đã đổi trong lúc build; zip có thể không khớp commit. Chạy lại.'
