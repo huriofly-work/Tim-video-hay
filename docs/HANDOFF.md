@@ -1,4 +1,4 @@
-# Bàn giao kỹ thuật · Tìm video hay 0.3.45
+# Bàn giao kỹ thuật · Tìm video hay 0.3.46
 
 Cập nhật ngày 14/11/2026. Dành cho Claude Code tiếp tục trên thư mục local chứa repo này.
 

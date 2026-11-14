@@ -2,7 +2,9 @@
 
 Mỗi bản ghi một mục, mới nhất ở trên. Bằng chứng kiểm tra chi tiết của từng phiên bản nằm ở `VALIDATION.md`, đặc tả ở `SPEC.md`.
 
-## [Unreleased]
+## [0.3.46] - 2026-11-14
+
+Sửa lỗi cài đặt dừng giữa chừng và gộp về một bản build không chứa Google OAuth. Chức năng tải, bìa, Google Sheets và YouTube giữ nguyên như 0.3.45.
 
 ### Changed
 - Chỉ còn một bản build, không nhúng Google OAuth, dùng chung cho máy mình và file đính kèm release. Bỏ chế độ build cá nhân (`-GoogleClientPath`, tự nhúng `packaging/google-oauth.desktop.json`) và cờ `-ForSharing`/`-NoBundledGoogle`. Hồ sơ đã kết nối Google dùng tiếp OAuth client đã lưu; hồ sơ mới nhập tệp Desktop JSON một lần ở Thiết lập nâng cao.
