@@ -23,4 +23,5 @@ artifacts/
 packaging/google-oauth.desktop.json
 /CLAUDE.local.md
 /.claude/settings.local.json
+/.claude/worktrees/
 packaging/personal-markers.txt

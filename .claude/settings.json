@@ -5,6 +5,8 @@
       "PowerShell(./scripts/Publish-Release.ps1:*)",
       "PowerShell(powershell.exe -NoProfile -ExecutionPolicy Bypass -File packaging/Install-Local.ps1:*)",
       "PowerShell(./packaging/Install-Local.ps1:*)",
+      "PowerShell(.\\scripts\\Publish-Release.ps1:*)",
+      "PowerShell(.\\packaging\\Install-Local.ps1:*)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Publish-Release.ps1:*)",
       "Bash(powershell.exe -NoProfile -ExecutionPolicy Bypass -File packaging/Install-Local.ps1:*)"
     ],
