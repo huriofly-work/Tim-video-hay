@@ -2,6 +2,11 @@
 
 Mỗi bản ghi một mục, mới nhất ở trên. Bằng chứng kiểm tra chi tiết của từng phiên bản nằm ở `VALIDATION.md`, đặc tả ở `SPEC.md`.
 
+## [Unreleased]
+
+### Changed
+- Nâng `Microsoft.Data.Sqlite` và `System.Security.Cryptography.ProtectedData` 10.0.12 → 11.0.0 (SQLitePCLRaw 3.0.5), `Microsoft.Web.WebView2` 1.0.4258.31 → 1.0.4314.35. Tạo lại lock file của Desktop và Tests để restore khoá phiên bản chạy được. Giấy phép WebView2 không đổi.
+
 ## [0.3.46] - 2026-11-14
 
 Sửa lỗi cài đặt dừng giữa chừng và gộp về một bản build không chứa Google OAuth. Chức năng tải, bìa, Google Sheets và YouTube giữ nguyên như 0.3.45.

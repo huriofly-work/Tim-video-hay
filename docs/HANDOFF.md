@@ -22,7 +22,7 @@ Cập nhật ngày 14/11/2026. Dành cho Claude Code tiếp tục trên thư m�
 | [`native/TimVideoHay.Tests`](../native/TimVideoHay.Tests) | Test runner console trong `Program.cs`, HTTP giả lập và fixture SQLite, DPAPI, file Windows. Smoke WPF/WebView2 nằm trong Desktop. |
 | [`scripts/`](../scripts), [`packaging/`](../packaging), [`legacy/browser-v022`](../legacy/browser-v022) | PowerShell đóng gói win-x64 tự chứa, gate phát hành, cài/gỡ theo user và manifest công cụ. Bản Node/Chromium cũ là kho khôi phục, tách khỏi đường build/chạy native. |
 
-Stack hiện tại là C#/.NET 10 (`net10.0-windows`), WPF + WinForms cho tray, WebView2 SDK `1.0.4258.31`, `Microsoft.Data.Sqlite` và `ProtectedData` `10.0.12`, `ffprobe` standalone ghim SHA-256. Mặc định hồ sơ ở `%LOCALAPPDATA%\TimVideoHay`, schema SQLite **8**, WAL và migration giao dịch. Payload jobs/settings, quyền Google, metadata tải và receipt dùng DPAPI CurrentUser. WebView2 quản lý phiên trong profile có ACL riêng. Sao lưu sau khi thoát app hoặc giữ bộ DB/WAL/SHM nhất quán. Chuyển profile mã hóa sang máy hoặc user Windows khác chưa hỗ trợ.
+Stack hiện tại là C#/.NET 10 (`net10.0-windows`), WPF + WinForms cho tray, WebView2 SDK `1.0.4314.35`, `Microsoft.Data.Sqlite` và `ProtectedData` `11.0.0` (SQLitePCLRaw 3.0.5), `ffprobe` standalone ghim SHA-256. Mặc định hồ sơ ở `%LOCALAPPDATA%\TimVideoHay`, schema SQLite **8**, WAL và migration giao dịch. Payload jobs/settings, quyền Google, metadata tải và receipt dùng DPAPI CurrentUser. WebView2 quản lý phiên trong profile có ACL riêng. Sao lưu sau khi thoát app hoặc giữ bộ DB/WAL/SHM nhất quán. Chuyển profile mã hóa sang máy hoặc user Windows khác chưa hỗ trợ.
 
 ## 3. Trạng thái và các quyết định cần giữ
 

@@ -61,6 +61,11 @@
           "SQLitePCLRaw.core": "3.0.5"
         }
       },
+      "System.Security.Cryptography.ProtectedData": {
+        "type": "Transitive",
+        "resolved": "11.0.0",
+        "contentHash": "iS9iyAMwLDPFBzTdcREDkzRBYmwy7aENYl7EXxAvnNJNCbl7+UVRgJfWaVLtVjSeDmT3JIItgGODmuAPljXFww=="
+      },
       "timvideohay.core": {
         "type": "Project"
       },
@@ -68,7 +73,8 @@
         "type": "Project",
         "dependencies": {
           "Microsoft.Data.Sqlite": "[11.0.0, )",
-          "TimVideoHay.Core": "[0.3.45, )"
+          "System.Security.Cryptography.ProtectedData": "[11.0.0, )",
+          "TimVideoHay.Core": "[0.3.46, )"
         }
       }
     },
