@@ -66,21 +66,12 @@ App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên b�
 **Priority:** P2
 **Depends on:** None
 
-## Hạ tầng phát triển
+## Ngoài phạm vi hiện tại
 
-### Audit lỗ hổng dependency
+- **Phân phối cho người khác:** ký gói, rà giấy phép phân phối ffprobe, nghiệm thu trên Windows sạch, MSI/MSIX. Chỉ mở lại khi đổi quyết định dùng cá nhân.
+- **Tính năng:** phụ đề nguồn (chưa có mẫu dữ liệu có mốc thời gian), nguồn video ngoài Douyin, API tải bên thứ ba, nhập video local, chuyển mã, AI.
 
-**What:** Thỉnh thoảng chạy `dotnet list package --vulnerable` cho các project native.
-
-**Why:** Restore dùng lock file nhưng chưa từng chạy audit trực tuyến.
-
-**Context:** Cần mạng. **Đạt khi:** không có lỗ hổng mức cao chưa xử lý, hoặc đã ghi lý do chấp nhận.
-
-**Effort:** S
-**Priority:** P3
-**Depends on:** None
-
-## Dọn chỗ lệch
+## Completed
 
 ### Tài liệu cũ lệch với mã
 
@@ -93,13 +84,20 @@ App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên b�
 **Effort:** S
 **Priority:** P3
 **Depends on:** None
+**Completed:** 2026-11-14 — `SECURITY.md` mô tả đúng bốn kết nối × vùng 4 MiB và đoạn 32 MiB khi tải tuần tự; `REBUILD-PLAN.md` ghi rõ là tài liệu lịch sử; `SPEC.md` ghi chú ForSharing đã bỏ từ 0.3.46; `README.md` khuyên giữ OAuth JSON ngoài thư mục repo.
 
-## Ngoài phạm vi hiện tại
+### Audit lỗ hổng dependency
 
-- **Phân phối cho người khác:** ký gói, rà giấy phép phân phối ffprobe, nghiệm thu trên Windows sạch, MSI/MSIX. Chỉ mở lại khi đổi quyết định dùng cá nhân.
-- **Tính năng:** phụ đề nguồn (chưa có mẫu dữ liệu có mốc thời gian), nguồn video ngoài Douyin, API tải bên thứ ba, nhập video local, chuyển mã, AI.
+**What:** Thỉnh thoảng chạy `dotnet list package --vulnerable` cho các project native.
 
-## Completed
+**Why:** Restore dùng lock file nhưng chưa từng chạy audit trực tuyến.
+
+**Context:** Cần mạng. **Đạt khi:** không có lỗ hổng mức cao chưa xử lý, hoặc đã ghi lý do chấp nhận.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** None
+**Completed:** 2026-11-14 — thay bằng Dependabot alerts và security updates trên GitHub, theo dõi liên tục các gói NuGet; ngày 14/11/2026 có 0 cảnh báo đang mở.
 
 ### CI GitHub Actions cho build + test
 

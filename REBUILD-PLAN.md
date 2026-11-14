@@ -1,5 +1,7 @@
 # Chuyển sang Windows/API
 
+> Tài liệu lịch sử của giai đoạn chuyển sang bản Windows (khoảng 0.3.0–0.3.5), không cập nhật theo mã. Từ 0.3.11 app không dùng yt-dlp; từ 0.3.46 chỉ còn một bản build không nhúng Google client. Trạng thái hiện tại xem [README.md](README.md) và [docs/HANDOFF.md](docs/HANDOFF.md).
+
 Đường chạy mặc định WPF/.NET 10, source native, build scripts/Build-Native.ps1, portable artifacts/windows-x64. Node/web/extension/AI đã bỏ khỏi chương trình phát triển. Mã/runtime cũ ở legacy/browser-v022 phục vụ khôi phục, không xóa data/video.
 
 Đã triển khai form/lịch sử, SQLite checkpoint, DPAPI, OAuth PKCE/Picker, Sheets, resumable upload, yt-dlp/ffprobe, tray/single instance, per-user install script. Xem API-ARCHITECTURE.md/SPEC.md.

@@ -46,7 +46,7 @@ Chưa nghiệm thu OAuth/Picker/quyền/upload thật, network drop thực, tư�
 
 ## Bảo mật và bản chia sẻ 0.3.11
 
-Xem SECURITY.md. ForSharing cấm nhúng Google client; người nhận tự tạo project/import JSON. Gói sạch mới, bỏ PDB/đường dẫn origin, khóa dependency và kiểm tra resource/hash/nội dung theo chính sách. ffprobe hash ghim trong assembly; media mạng đi qua HTTPS/CDN allowlist và socket DNS chặn IP nội bộ; probe từ xa qua cầu nối loopback mã ngẫu nhiên, không đưa URL CDN trực tiếp cho ffprobe. ACL CurrentUser/System, chặn reparse khi tải/xóa. Bản portable chưa ký; hash không chống giả mạo toàn gói. Không yêu cầu chứng thư hoặc project chung cho việc dùng cá nhân/chia sẻ thử.
+Xem SECURITY.md. Từ 0.3.46 chỉ còn một bản build, không nhúng Google client và không còn chế độ ForSharing; mọi hồ sơ mới tự nhập OAuth client JSON trong app. Ở 0.3.11, ForSharing cấm nhúng Google client; người nhận tự tạo project/import JSON. Gói sạch mới, bỏ PDB/đường dẫn origin, khóa dependency và kiểm tra resource/hash/nội dung theo chính sách. ffprobe hash ghim trong assembly; media mạng đi qua HTTPS/CDN allowlist và socket DNS chặn IP nội bộ; probe từ xa qua cầu nối loopback mã ngẫu nhiên, không đưa URL CDN trực tiếp cho ffprobe. ACL CurrentUser/System, chặn reparse khi tải/xóa. Bản portable chưa ký; hash không chống giả mạo toàn gói. Không yêu cầu chứng thư hoặc project chung cho việc dùng cá nhân/chia sẻ thử.
 
 Cột video/kênh được gán theo chỉ số vị trí và hàng tiêu đề (1–30), không phụ thuộc tên tiêu đề khi đã có mapping. Chèn/xóa/chuyển cột cần chọn lại. Snapshot đích và mốc Short/Long giữ riêng theo công việc; legacy thiếu mốc dùng 300000 ms, thiếu mapping dùng nhận diện tiêu đề cũ.
 
