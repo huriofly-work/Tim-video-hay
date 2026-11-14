@@ -1,6 +1,6 @@
 # TODOS
 
-App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên bản và sao lưu bản cài, không phân phối cho người khác. Nguồn gốc: mục 5 của `docs/HANDOFF.md` (05/11/2026).
+App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên bản và sao lưu bản cài, không nhắm tới người khác; repo public nên ai cũng tải được file đính kèm. Nguồn gốc: mục 5 của `docs/HANDOFF.md` (05/11/2026).
 
 ## Nghiệm thu
 
@@ -40,7 +40,7 @@ App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên b�
 
 **Effort:** S
 **Priority:** P2
-**Depends on:** None (release v0.3.44 đã có)
+**Depends on:** None (release v0.3.46 đã có)
 
 ### Sao lưu và khôi phục hồ sơ
 
@@ -56,7 +56,7 @@ App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên b�
 
 ### Nâng cấp tại chỗ trên máy mình
 
-**What:** Cài bản kế tiếp bằng `./packaging/Install-Local.ps1` trên máy đang dùng 0.3.44.
+**What:** Cài bản kế tiếp bằng `./packaging/Install-Local.ps1` đè lên bản đang dùng trên máy.
 
 **Why:** Mỗi release sẽ được cài đè theo cách này; cần chắc hồ sơ và công việc dở được giữ.
 
@@ -94,6 +94,25 @@ App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên b�
 
 ## Dọn chỗ lệch
 
+### Tài liệu cũ lệch với mã
+
+**What:** Sửa hoặc đánh dấu lịch sử các tài liệu cũ.
+
+**Why:** `REBUILD-PLAN.md` còn mô tả yt-dlp/cookie thủ công; `SECURITY.md` còn mô tả segment 32 MiB, trong khi 0.3.44 dùng vùng tối đa 4 MiB và bốn worker.
+
+**Context:** Đối chiếu với mã hiện tại và `README.md`. **Đạt khi:** tài liệu khớp mã, hoặc file kế hoạch cũ ghi rõ là lịch sử.
+
+**Effort:** S
+**Priority:** P3
+**Depends on:** None
+
+## Ngoài phạm vi hiện tại
+
+- **Phân phối cho người khác:** ký gói, rà giấy phép phân phối ffprobe, nghiệm thu trên Windows sạch, MSI/MSIX. Chỉ mở lại khi đổi quyết định dùng cá nhân.
+- **Tính năng:** phụ đề nguồn (chưa có mẫu dữ liệu có mốc thời gian), nguồn video ngoài Douyin, API tải bên thứ ba, nhập video local, chuyển mã, AI.
+
+## Completed
+
 ### Phiên bản hiển thị còn cứng trong mã
 
 **What:** Cho tiêu đề cửa sổ và User-Agent lấy từ phiên bản assembly.
@@ -106,25 +125,6 @@ App chỉ để chủ repo tự dùng. Release dùng để quản lý phiên b�
 **Priority:** P3
 **Depends on:** None
 **Completed:** v0.3.45 (2026-11-14) — `AppInfo` trong Core cấp tiêu đề cửa sổ và User-Agent (cả bản dịch tên kênh) từ phiên bản assembly; test runner đối chiếu với `VERSION`.
-
-### Tài liệu cũ lệch với mã
-
-**What:** Sửa hoặc đánh dấu lịch sử các tài liệu cũ.
-
-**Why:** `REBUILD-PLAN.md` còn mô tả yt-dlp/cookie thủ công; `SECURITY.md` còn mô tả segment 32 MiB, trong khi 0.3.44 dùng vùng tối đa 4 MiB và bốn worker.
-
-**Context:** Chạy kèm `/document-release`. **Đạt khi:** tài liệu khớp mã, hoặc file kế hoạch cũ ghi rõ là lịch sử.
-
-**Effort:** S
-**Priority:** P3
-**Depends on:** None
-
-## Ngoài phạm vi hiện tại
-
-- **Phân phối cho người khác:** ký gói, rà giấy phép phân phối ffprobe, nghiệm thu trên Windows sạch, MSI/MSIX. Chỉ mở lại khi đổi quyết định dùng cá nhân.
-- **Tính năng:** phụ đề nguồn (chưa có mẫu dữ liệu có mốc thời gian), nguồn video ngoài Douyin, API tải bên thứ ba, nhập video local, chuyển mã, AI.
-
-## Completed
 
 ### Release đầu tiên v0.3.44
 
