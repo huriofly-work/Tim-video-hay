@@ -1,0 +1,164 @@
+<Window x:Class="TimVideoHay.Desktop.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" xmlns:local="clr-namespace:TimVideoHay.Desktop" xmlns:core="clr-namespace:TimVideoHay.Core;assembly=TimVideoHay.Core" Title="Tìm video hay 0.3.42" Width="1180" Height="900" MinWidth="860" MinHeight="720" WindowStartupLocation="CenterScreen" UseLayoutRounding="True" Style="{StaticResource {x:Type Window}}">
+
+ <Window.Resources><BooleanToVisibilityConverter x:Key="BoolVisibility"/>
+
+ <Style x:Key="CopyHistoryText" TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+  <Setter Property="Background" Value="Transparent"/><Setter Property="BorderThickness" Value="0"/>
+  <Setter Property="Margin" Value="0"/><Setter Property="Padding" Value="4,0"/><Setter Property="MinHeight" Value="32"/>
+  <Setter Property="HorizontalAlignment" Value="Stretch"/><Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+  <Setter Property="ToolTipService.ShowDuration" Value="30000"/>
+  <Setter Property="Template"><Setter.Value><ControlTemplate TargetType="Button">
+   <Border x:Name="CopySurface" Background="{TemplateBinding Background}" Padding="{TemplateBinding Padding}" CornerRadius="4">
+    <ContentPresenter HorizontalAlignment="Stretch" VerticalAlignment="Center"/>
+   </Border>
+   <ControlTemplate.Triggers>
+    <Trigger Property="IsMouseOver" Value="True"><Setter TargetName="CopySurface" Property="Background" Value="#E1EDFF"/></Trigger>
+    <Trigger Property="IsKeyboardFocused" Value="True"><Setter TargetName="CopySurface" Property="Background" Value="#E1EDFF"/></Trigger>
+    <Trigger Property="IsPressed" Value="True"><Setter TargetName="CopySurface" Property="Background" Value="#CADFFF"/></Trigger>
+   </ControlTemplate.Triggers>
+  </ControlTemplate></Setter.Value></Setter>
+ </Style>
+
+ <Style x:Key="CompactDetailText" TargetType="TextBlock" BasedOn="{StaticResource OptionalText}"><Setter Property="FontSize" Value="13"/><Setter Property="Margin" Value="0,2"/></Style>
+ <DataTemplate x:Key="JobDetail"><Border Style="{StaticResource Card}" Padding="12" Margin="0,10,0,0"><StackPanel>
+ <WrapPanel Margin="0,0,0,6"><WrapPanel.Resources><Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}"><Setter Property="MinHeight" Value="30"/><Setter Property="Padding" Value="10,5"/><Setter Property="Margin" Value="0,2,6,2"/></Style></WrapPanel.Resources><Button Content="Mở file" ToolTip="Mở video đã tải trên máy" Command="{Binding OpenFileCommand}"/><Button Content="Mở thư mục" Command="{Binding OpenDownloadFolderCommand}"/><Button Content="Mở bảng" Command="{Binding OpenJobSheetCommand}"/><Button Content="Mở video YouTube" Command="{Binding OpenVideoCommand}"/><Button Content="Cấp lại quyền Google" Command="{Binding ReconnectJobCommand}" Visibility="{Binding SelectedJob.NeedsGoogleReconnect, Converter={StaticResource BoolVisibility}}"/><Button Content="Đối soát…" Command="{Binding ReconcileCommand}" Visibility="{Binding SelectedJob.NeedsReconciliation, Converter={StaticResource BoolVisibility}}"/></WrapPanel>
+ <Expander IsExpanded="{Binding DetailsExpanded, Mode=TwoWay}"><Expander.Header><WrapPanel><TextBlock Text="Chi tiết tiến trình và kết quả"/><TextBlock Text="{Binding SelectedJob.Name}" FontWeight="SemiBold" FontSize="13" Foreground="#425773" Margin="12,0,0,0" MaxWidth="280" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedJob.Name}"/></WrapPanel></Expander.Header>
+ <ScrollViewer Height="170" Margin="0,6,0,0" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" PreviewMouseWheel="DetailMouseWheel" Background="#F8FAFD"><ScrollViewer.Resources><Style TargetType="ScrollBar"><Setter Property="Width" Value="20"/><Setter Property="Background" Value="#DFE7F2"/></Style></ScrollViewer.Resources><StackPanel Margin="0,0,12,0">
+ <TextBlock Text="Chọn công việc trong lịch sử để xem tiến trình và kết quả." Foreground="#61748A" FontSize="13"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding SelectedJob}" Value="{x:Null}"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock>
+ <StackPanel><StackPanel.Style><Style TargetType="StackPanel"><Style.Triggers><DataTrigger Binding="{Binding SelectedJob}" Value="{x:Null}"><Setter Property="Visibility" Value="Collapsed"/></DataTrigger></Style.Triggers></Style></StackPanel.Style>
+ <TextBlock Style="{StaticResource CompactDetailText}" Text="{Binding SelectedJob.ResultsLabel}"/>
+ <TextBlock Text="{Binding SelectedJob.Stage, StringFormat=Bước xử lý: {0}}" TextWrapping="Wrap" FontSize="13" Foreground="#236AD8" Margin="0,3,0,2"/>
+ <Grid Margin="0,1,0,4" MaxWidth="480" HorizontalAlignment="Left"><Grid.ColumnDefinitions><ColumnDefinition Width="110"/><ColumnDefinition Width="240"/><ColumnDefinition Width="58"/></Grid.ColumnDefinitions><TextBlock Text="{Binding SelectedJob.ProgressLabel}" FontSize="12" Foreground="#61748A"/><ProgressBar Grid.Column="1" Value="{Binding SelectedJob.DisplayProgress, Mode=OneWay}" Maximum="100" Height="5" VerticalAlignment="Center" ToolTip="Tải: số byte đã lưu trên máy. YouTube: số byte máy chủ đã xác nhận. Phần trăm tính riêng cho bước truyền video."/><TextBlock Grid.Column="2" Text="{Binding SelectedJob.DisplayProgress, StringFormat={}{0:0.#}%}" FontSize="12" HorizontalAlignment="Right" VerticalAlignment="Center"/></Grid>
+ <TextBlock Style="{StaticResource CompactDetailText}" Foreground="#203044" Text="{Binding SelectedJob.Message}"/>
+ <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions>
+ <StackPanel><TextBlock Style="{StaticResource CompactDetailText}" Text="{Binding SelectedJob.Media.QualityLabel}"/><TextBlock Style="{StaticResource CompactDetailText}" Text="{Binding SelectedJob.Media.QualityStatus}"/></StackPanel>
+ <StackPanel Grid.Column="2"><TextBlock Style="{StaticResource CompactDetailText}" Text="{Binding SelectedJob.Media.CoverStatus}"/><TextBlock Style="{StaticResource CompactDetailText}" Text="{Binding SelectedJob.SourceChannelMessage}"/></StackPanel></Grid>
+ <TextBlock Style="{StaticResource CompactDetailText}" Text="{Binding SelectedJob.Media.Path}" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis" ToolTip="{Binding SelectedJob.Media.Path}"/>
+ </StackPanel></StackPanel></ScrollViewer></Expander>
+
+ </StackPanel></Border></DataTemplate></Window.Resources>
+ <DockPanel Margin="20,16"><Grid DockPanel.Dock="Top" Margin="0,0,0,14"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Tìm video hay" FontSize="26" FontWeight="SemiBold"/><TextBlock Text="Tải Douyin · Điền Google Sheets · Đăng YouTube" Foreground="#61748A" Margin="0,3,0,0"/></StackPanel><WrapPanel Grid.Column="1" VerticalAlignment="Center"><Button Content="{Binding AttentionLabel}" Click="OpenAttention" Visibility="{Binding HasAttentions, Converter={StaticResource BoolVisibility}}" Background="#FFF1D6"/><Button Content="Hướng dẫn" Command="{Binding UserGuideCommand}"/></WrapPanel></Grid>
+
+ <Border DockPanel.Dock="Bottom" Background="#E8EFF8" Padding="10" Margin="0,10,0,0" CornerRadius="6"><ScrollViewer MaxHeight="80" VerticalScrollBarVisibility="Auto"><TextBlock Text="{Binding Notice}" TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite"/></ScrollViewer></Border>
+
+ <TabControl SelectedIndex="{Binding TabIndex}" Background="Transparent" BorderThickness="0"><TabItem Header="Xử lý video"><DockPanel Margin="0,12,0,0">
+
+ <ScrollViewer x:Name="WorkArea" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled"><StackPanel>
+
+ <Border Style="{StaticResource Card}" Margin="0,0,0,10"><Expander x:Name="NewJobPanel" Header="Công việc mới" IsExpanded="{Binding NewJobExpanded, Mode=TwoWay}"><DockPanel Margin="0,8,0,0"><StackPanel DockPanel.Dock="Bottom" Margin="0,8,0,0"><WrapPanel><Button Content="Bắt đầu xử lý" ToolTip="{Binding NewJobHint}" ToolTipService.ShowOnDisabled="True" Style="{StaticResource Primary}" Command="{Binding SubmitFullCommand}" AutomationProperties.AutomationId="SubmitFull"/><Button Content="Chọn thư mục" Command="{Binding ChooseFullFolderCommand}" Visibility="{Binding DownloadSelected, Converter={StaticResource BoolVisibility}}"/></WrapPanel><TextBlock Visibility="{Binding DownloadSelected, Converter={StaticResource BoolVisibility}}" Text="{Binding FolderLabel}" TextTrimming="CharacterEllipsis" ToolTip="{Binding FolderLabel}" Margin="0,4"/>
+
+        <TextBlock Text="{Binding NewJobHint}" TextWrapping="Wrap" Foreground="#61748A" Margin="0,4"/></StackPanel><ScrollViewer x:Name="FullPage" VerticalScrollBarVisibility="Disabled" HorizontalScrollBarVisibility="Disabled"><StackPanel Margin="0,0,12,0"><WrapPanel Margin="0,0,0,12"><CheckBox Content="Tải video" IsChecked="{Binding DownloadSelected}" IsEnabled="{Binding DownloadEditable}" Margin="0,0,20,0"/><CheckBox ToolTip="{Binding SheetLabel}" Content="Điền Google Sheets" IsChecked="{Binding SheetSelected}" Margin="0,0,20,0"/><CheckBox ToolTip="{Binding ChannelLabel}" Content="Đăng YouTube" IsChecked="{Binding UploadSelected}"/></WrapPanel>
+
+        
+
+        
+
+        
+
+        <TextBlock Text="Link Douyin"/><TextBox x:Name="FullLinkBox" Text="{Binding FullLink, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="FullLink"/><TextBlock Text="{Binding FullLinkError}" Foreground="#B42318" TextWrapping="Wrap" Style="{StaticResource OptionalText}" AutomationProperties.LiveSetting="Assertive"/>
+
+        <Grid><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions>
+
+          <StackPanel><DockPanel><TextBlock DockPanel.Dock="Right" Text="{Binding FullNameCount}" Foreground="#61748A" FontSize="12"/><TextBlock Text="Tên video / tiêu đề YouTube"/></DockPanel><TextBox x:Name="FullNameBox" Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" local:VideoNameInput.Limited="True" AutomationProperties.AutomationId="FullName"/><TextBlock Text="{Binding FullNameError}" Foreground="#B42318" TextWrapping="Wrap" Style="{StaticResource OptionalText}"/></StackPanel>
+
+          <StackPanel Grid.Column="2" Visibility="{Binding SheetSelected, Converter={StaticResource BoolVisibility}}"><DockPanel><Button DockPanel.Dock="Right" Content="Làm mới" ToolTip="Làm mới ngách" AutomationProperties.Name="Làm mới ngách" Command="{Binding RefreshNichesCommand}" Padding="4,0" MinHeight="20" Margin="0"/><TextBlock Text="Ngách chủ đề"/></DockPanel><ComboBox x:Name="FullNicheBox" ItemsSource="{Binding Niches}" SelectedItem="{Binding FullNiche}" IsEditable="False" IsTextSearchEnabled="True" AutomationProperties.AutomationId="FullNiche"/><TextBlock Text="{Binding NicheStatus}" Foreground="#61748A" TextWrapping="Wrap" FontSize="12"/></StackPanel>
+
+        </Grid>
+
+        <Expander Visibility="{Binding UploadSelected, Converter={StaticResource BoolVisibility}}" x:Name="UploadOptions" Header="Tùy chọn đăng YouTube" Margin="0,0,0,12"><StackPanel Margin="0,10,0,0">
+
+          <TextBlock Text="Tiêu đề riêng (để trống để dùng tên video)"/><TextBox Text="{Binding UploadTitle, UpdateSourceTrigger=PropertyChanged}"/><TextBlock Text="{Binding UploadTitleError}" Foreground="#B42318" TextWrapping="Wrap" Style="{StaticResource OptionalText}"/>
+
+          <TextBlock Text="Mô tả (mặc định trống)"/><TextBox Text="{Binding UploadDescription, UpdateSourceTrigger=PropertyChanged}" AcceptsReturn="True" MinHeight="70" TextWrapping="Wrap"/><TextBlock Text="{Binding UploadDescriptionError}" Foreground="#B42318" TextWrapping="Wrap" Style="{StaticResource OptionalText}"/>
+
+          <ComboBox ItemsSource="{Binding PrivacyOptions}" SelectedValuePath="Value" DisplayMemberPath="Label" SelectedValue="{Binding Privacy}"/>
+
+          <TextBlock Text="Luôn khai báo không dành cho trẻ em. Video được đăng theo chế độ bạn chọn." Foreground="#61748A" TextWrapping="Wrap"/>
+
+        </StackPanel></Expander>
+
+        </StackPanel></ScrollViewer></DockPanel></Expander></Border>
+
+ <Border Style="{StaticResource Card}"><Grid><Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition/></Grid.RowDefinitions><StackPanel><DockPanel Margin="0,0,0,6"><WrapPanel x:Name="HistoryToolbar" DockPanel.Dock="Right"><Button x:Name="RefreshHistoryButton" Content="Làm mới" ToolTip="Chỉ đọc lại lịch sử công việc trên máy; giữ bộ lọc và dòng đang chọn." Command="{Binding RefreshHistoryCommand}"/><Button x:Name="PauseAllHistoryButton" Content="Tạm dừng tất cả" Command="{Binding StopCommand}"/></WrapPanel><TextBlock x:Name="HistoryTitle" Text="Lịch sử công việc" FontWeight="SemiBold" FontSize="18" VerticalAlignment="Center"/></DockPanel>
+        <TextBlock Text="{Binding HistorySummary}" TextWrapping="Wrap" Foreground="#61748A" Margin="0,0,0,6"/>
+
+        <Expander x:Name="HistoryFilters" Header="{Binding HistoryFilterLabel}" IsExpanded="False" Margin="0,0,0,8"><StackPanel Margin="0,8,0,0">
+ <WrapPanel>
+  <StackPanel Width="210" Margin="0,0,12,0"><DockPanel><Button x:Name="ClearHistorySearchButton" DockPanel.Dock="Right" Content="Xóa" ToolTip="Bỏ lọc từ khóa" Command="{Binding ClearHistorySearchCommand}" Padding="6,0" MinHeight="20" Margin="0"/><TextBlock Text="Tìm tên, link hoặc ngách"/></DockPanel><TextBox x:Name="HistorySearchBox" Text="{Binding HistorySearch, UpdateSourceTrigger=PropertyChanged}" AutomationProperties.AutomationId="HistorySearch" Margin="0,5,0,8"/></StackPanel>
+  <StackPanel Width="250" Margin="0,0,12,0"><TextBlock Text="Trạng thái"/><local:ChecklistFilter x:Name="StateChecklist" ItemsSource="{Binding StateChoices}" Summary="{Binding StateFilterSummary}" ClearCommand="{Binding ClearStateFilterCommand}" ClearLabel="Bỏ lọc trạng thái" Hint="Nhận bất kỳ trạng thái đã tích. Bỏ hết: tất cả."/></StackPanel>
+  <StackPanel Width="250" Margin="0,0,12,0"><TextBlock Text="Công việc"/><local:ChecklistFilter x:Name="ActionChecklist" ItemsSource="{Binding ActionChoices}" Summary="{Binding ActionFilterSummary}" ClearCommand="{Binding ClearActionFilterCommand}" ClearLabel="Bỏ lọc công việc" Hint="Phải có đủ các việc đã tích; thêm “Trống” để lấy cả nhóm đó. Bỏ hết: tất cả."/></StackPanel>
+  <StackPanel Width="190"><TextBlock Text="Sắp xếp"/><ComboBox x:Name="HistorySortBox" ItemsSource="{Binding SortFilters}" SelectedItem="{Binding SortFilter}"/></StackPanel>
+  <Button Content="Đặt lại" ToolTip="Đặt lại tất cả bộ lọc, từ khóa và sắp xếp" Command="{Binding ResetHistoryFiltersCommand}" VerticalAlignment="Bottom" Margin="12,0,0,8"/>
+ </WrapPanel>
+ </StackPanel></Expander>
+        </StackPanel><Grid Grid.Row="1"><DataGrid Height="270" x:Name="FullHistory" ItemsSource="{Binding Jobs}" SelectedItem="{Binding SelectedJob}" MinHeight="140" RowHeight="44" CanUserSortColumns="False" EnableRowVirtualization="True" EnableColumnVirtualization="True" ScrollViewer.CanContentScroll="True" HorizontalGridLinesBrush="#DFE6F0"><DataGrid.Columns>
+
+          <DataGridTextColumn Header="Chờ" Binding="{Binding QueueLabel}" Width="50" MinWidth="50"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock" BasedOn="{StaticResource GridText}"><Setter Property="ToolTip" Value="Thứ tự các mục đang chờ, tính trước khi lọc. Tải/đăng chạy lần lượt; tác vụ Google chạy nền riêng. Xóa trên máy bắt đầu ngay, không chờ video khác."/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn>
+
+          <DataGridTemplateColumn Header="Tên video" Width="*" MinWidth="160" ClipboardContentBinding="{Binding Name}"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+           <Button Style="{StaticResource CopyHistoryText}" Click="CopyVideoName" ToolTip="{Binding Name, StringFormat=Bấm để sao chép tên video: {0}}" AutomationProperties.Name="{Binding Name, StringFormat=Sao chép tên video: {0}}"><TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis"/></Button>
+          </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+          <DataGridTemplateColumn Header="Link video" Width="210" MinWidth="180" ClipboardContentBinding="{Binding VideoLink}"><DataGridTemplateColumn.CellTemplate><DataTemplate>
+           <Button Style="{StaticResource CopyHistoryText}" Click="CopyVideoLink" Foreground="#236AD8" ToolTip="{Binding VideoLink, StringFormat=Bấm để sao chép link video: {0}}" AutomationProperties.Name="{Binding VideoLink, StringFormat=Sao chép link video: {0}}"><TextBlock Text="{Binding VideoLink}" TextTrimming="CharacterEllipsis"/></Button>
+          </DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+          <DataGridTextColumn Header="Công việc" Binding="{Binding ModeLabel}" Width="140"><DataGridTextColumn.ElementStyle><Style TargetType="TextBlock" BasedOn="{StaticResource GridText}"><Setter Property="TextTrimming" Value="CharacterEllipsis"/><Setter Property="ToolTip" Value="{Binding WorkDetail}"/></Style></DataGridTextColumn.ElementStyle></DataGridTextColumn><DataGridTemplateColumn Header="Trạng thái" Width="125"><DataGridTemplateColumn.CellTemplate><DataTemplate><Border Padding="6,4" CornerRadius="4" VerticalAlignment="Center" HorizontalAlignment="Left"><Border.Style><Style TargetType="Border"><Setter Property="Background" Value="#EDF1F6"/><Style.Triggers><DataTrigger Binding="{Binding State}" Value="{x:Static core:JobState.Running}"><Setter Property="Background" Value="#E7EFFF"/></DataTrigger><DataTrigger Binding="{Binding State}" Value="{x:Static core:JobState.Queued}"><Setter Property="Background" Value="#EDF1F6"/></DataTrigger><DataTrigger Binding="{Binding State}" Value="{x:Static core:JobState.Complete}"><Setter Property="Background" Value="#E7F3EC"/></DataTrigger><DataTrigger Binding="{Binding State}" Value="{x:Static core:JobState.WaitingForYouTube}"><Setter Property="Background" Value="#FFF2DA"/></DataTrigger><DataTrigger Binding="{Binding State}" Value="{x:Static core:JobState.NeedsAuth}"><Setter Property="Background" Value="#FFF0E8"/></DataTrigger><DataTrigger Binding="{Binding State}" Value="{x:Static core:JobState.NeedsAction}"><Setter Property="Background" Value="#FFF2DA"/></DataTrigger><DataTrigger Binding="{Binding State}" Value="{x:Static core:JobState.Failed}"><Setter Property="Background" Value="#FCEAEC"/></DataTrigger></Style.Triggers></Style></Border.Style><TextBlock Text="{Binding StateLabel}" FontSize="12" FontWeight="SemiBold" Foreground="#34445C" ToolTip="{Binding Message}"/></Border></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+
+          <DataGridTemplateColumn Header="Thao tác" Width="200" MinWidth="200"><DataGridTemplateColumn.CellTemplate><DataTemplate><WrapPanel><Button Content="{Binding PauseResumeLabel}" IsEnabled="{Binding CanTogglePause}" Visibility="{Binding CanTogglePause, Converter={StaticResource BoolVisibility}}" Click="PauseRow" Margin="0,0,3,0" Padding="4"/><Button Content="Bổ sung" ToolTip="Thực hiện phần chưa làm, phần đã xóa hoặc tải lại ảnh bìa" Visibility="{Binding CanSupplement, Converter={StaticResource BoolVisibility}}" IsEnabled="{Binding CanSupplement}" Click="AddRow" Margin="0" Padding="4"/><Button Content="Xóa" ToolTip="Chọn kết quả cần xóa hoặc xóa công việc khỏi lịch sử" Style="{StaticResource DangerQuiet}" Click="DeleteRow" Margin="3,0,0,0" Padding="4"/></WrapPanel></DataTemplate></DataGridTemplateColumn.CellTemplate></DataGridTemplateColumn>
+
+        </DataGrid.Columns></DataGrid>
+
+        <TextBlock Text="Không có công việc phù hợp. Bạn có thể tạo công việc mới hoặc đặt lại bộ lọc." TextWrapping="Wrap" HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="#61748A" MaxWidth="450" IsHitTestVisible="False"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Visibility" Value="Collapsed"/><Style.Triggers><DataTrigger Binding="{Binding Jobs.Count}" Value="0"><Setter Property="Visibility" Value="Visible"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></Grid></Grid></Border>
+
+ <ContentControl x:Name="JobDetailHost" Content="{Binding}" ContentTemplate="{DynamicResource JobDetail}"/>
+ </StackPanel></ScrollViewer></DockPanel></TabItem><TabItem Header="Kết nối &amp; cài đặt"><ScrollViewer x:Name="SettingsPage" VerticalScrollBarVisibility="Auto"><StackPanel Margin="16"><Border Style="{StaticResource Card}"><StackPanel>
+
+        <TextBlock Text="Kết nối Google" FontSize="21" FontWeight="SemiBold"/>
+
+        <TextBlock Text="{Binding GoogleSetupMessage}" TextWrapping="Wrap" Foreground="#61748A" Margin="0,8,0,10"/>
+
+        <WrapPanel><Button Content="Kết nối Google" Style="{StaticResource Primary}" Command="{Binding ConnectGoogleCommand}"/><TextBlock Text="{Binding OAuthLabel}" VerticalAlignment="Center" TextWrapping="Wrap" MaxWidth="530"/></WrapPanel>
+
+        </StackPanel></Border><Border Style="{StaticResource Card}" Margin="0,12,0,0"><StackPanel>
+
+        <TextBlock Text="Google Sheets" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="{Binding SheetLabel}" TextWrapping="Wrap" Margin="0,6,0,8"/>
+
+        <WrapPanel><Button x:Name="ConnectSheetButton" Content="Chọn / đổi bảng" Command="{Binding ConnectSheetCommand}"/><Button Content="Mở bảng" Command="{Binding OpenSheetCommand}"/><Button Content="Ngắt kết nối bảng" Command="{Binding DisconnectSheetCommand}"/></WrapPanel>
+
+        <Grid Margin="0,8,0,0"><Grid.ColumnDefinitions><ColumnDefinition/><ColumnDefinition Width="18"/><ColumnDefinition/></Grid.ColumnDefinitions><StackPanel><TextBlock Text="Tab video"/><ComboBox x:Name="VideoTabBox" ItemsSource="{Binding SheetTabs}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedTab}"/><TextBlock Text="{Binding VideoTabError}" Foreground="#B42318" TextWrapping="Wrap" Style="{StaticResource OptionalText}" AutomationProperties.LiveSetting="Assertive"/><Button Content="Chọn cột video" Command="{Binding ChooseVideoColumnsCommand}" HorizontalAlignment="Left"/></StackPanel><StackPanel Grid.Column="2"><TextBlock Text="Tab kênh nguồn"/><ComboBox x:Name="SourceTabBox" ItemsSource="{Binding SheetTabs}" DisplayMemberPath="Name" SelectedItem="{Binding SelectedSourceChannelTab}"/><TextBlock Text="{Binding SourceTabError}" Foreground="#B42318" TextWrapping="Wrap" Style="{StaticResource OptionalText}" AutomationProperties.LiveSetting="Assertive"/><Button Content="Chọn cột kênh nguồn" Command="{Binding ChooseChannelColumnsCommand}" HorizontalAlignment="Left"/></StackPanel></Grid><Button Content="Làm mới tab" Command="{Binding RefreshSheetTabsCommand}" HorizontalAlignment="Left"/><TextBlock Text="{Binding SheetTabsStatus}" TextWrapping="Wrap" Foreground="#61748A"/>
+
+        <TextBlock Text="Chọn cột dữ liệu của từng tab ở trên; tên tiêu đề trên Sheets có thể thay đổi." TextWrapping="Wrap" Foreground="#61748A"/>
+
+        <TextBlock Text="{Binding ColumnMappingLabel}" TextWrapping="Wrap" Foreground="#61748A"/>
+
+        <TextBlock Text="Kênh nguồn được cập nhật cùng dòng khi đã tồn tại. Tên ngoài Latinh được dịch sang tiếng Anh bằng Google Translate miễn phí." TextWrapping="Wrap" Foreground="#61748A" Margin="0,6,0,0"/>
+
+        </StackPanel></Border><Border Style="{StaticResource Card}" Margin="0,12,0,0"><StackPanel>
+
+        <TextBlock Text="YouTube" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="{Binding ChannelLabel}" Margin="0,6,0,8" TextWrapping="Wrap"/>
+
+        <WrapPanel><Button x:Name="ConnectChannelButton" Content="Kết nối / đổi kênh" Command="{Binding ConnectYouTubeCommand}"/><Button Content="Mở kênh" Command="{Binding OpenChannelCommand}"/><Button Content="Ngắt kết nối YouTube" Command="{Binding DisconnectYouTubeCommand}"/></WrapPanel>
+
+        </StackPanel></Border><Border Style="{StaticResource Card}" Margin="0,12,0,0"><StackPanel>
+
+        <TextBlock Text="Phân loại nội dung" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="Mốc thời lượng Short (phút)" Margin="0,8,0,0"/><TextBox x:Name="ShortMinutesBox" Text="{Binding ShortMinutes, UpdateSourceTrigger=PropertyChanged}" Width="120" HorizontalAlignment="Left"/><TextBlock Text="{Binding ThresholdStatus}" TextWrapping="Wrap"><TextBlock.Style><Style TargetType="TextBlock"><Setter Property="Foreground" Value="#61748A"/><Style.Triggers><DataTrigger Binding="{Binding HasThresholdError}" Value="True"><Setter Property="Foreground" Value="#B42318"/></DataTrigger></Style.Triggers></Style></TextBlock.Style></TextBlock></StackPanel></Border><Border Style="{StaticResource Card}" Margin="0,12,0,0"><StackPanel>
+
+        <TextBlock Text="Lưu file" FontSize="17" FontWeight="SemiBold"/><TextBlock Text="{Binding FolderLabel}" Margin="0,6" TextWrapping="Wrap"/><Button x:Name="ChooseStorageButton" Content="Chọn thư mục xử lý video" Command="{Binding ChooseFullFolderCommand}" HorizontalAlignment="Left"/>
+
+        </StackPanel></Border><Border Style="{StaticResource Card}" Margin="0,12,0,0"><StackPanel><Expander x:Name="GoogleAdvancedSettings" Header="Thiết lập Google nâng cao" Margin="0,18,0,0"><StackPanel Margin="0,10,0,0"><TextBlock Text="Chỉ cần khi chuẩn bị bản cài chưa có cấu hình Google hoặc dùng cấu hình riêng. Sau khi thiết lập, việc đổi máy, bảng và kênh dùng cùng trình hướng dẫn." TextWrapping="Wrap" Foreground="#61748A"/><WrapPanel><Button x:Name="ImportGoogleButton" Content="Nhập cấu hình Google Desktop" Command="{Binding ImportOAuthCommand}"/><Button Content="Hướng dẫn chuẩn bị" Command="{Binding HelpCommand}"/></WrapPanel></StackPanel></Expander>
+
+        <Expander x:Name="DouyinSettings" Header="Nguồn dữ liệu Douyin" Margin="0,18,0,0"><StackPanel Margin="0,10,0,0">
+
+          <TextBlock Text="App ưu tiên nguồn công khai và phiên khách. Tự dùng phiên tài khoản khi khách chưa đủ dữ liệu và thông báo cho bạn. Trình duyệt chạy ẩn, chỉ hiện khi cần đăng nhập/xác minh." TextWrapping="Wrap" Foreground="#61748A"/>
+
+          <Button x:Name="OpenDouyinButton" Content="Mở Douyin trong app / đăng nhập trước" Command="{Binding OpenDouyinSessionCommand}" HorizontalAlignment="Left" Margin="0,8,0,4"/>
+
+          <Button Content="Hướng dẫn đăng nhập / phiên Douyin" Command="{Binding DouyinHelpCommand}" HorizontalAlignment="Left"/>
+
+          <Button Content="Mở thư mục dữ liệu app" Command="{Binding OpenDataCommand}" HorizontalAlignment="Left"/>
+
+          <TextBlock Text="Ngắt kết nối chỉ xóa quyền lưu trên máy; không thu hồi quyền toàn project. Thay bảng/kênh/thư mục chỉ áp dụng cho công việc mới." Foreground="#61748A" TextWrapping="Wrap" Margin="0,10"/>
+
+        </StackPanel></Expander>
+
+      </StackPanel></Border></StackPanel></ScrollViewer></TabItem></TabControl></DockPanel></Window>
+

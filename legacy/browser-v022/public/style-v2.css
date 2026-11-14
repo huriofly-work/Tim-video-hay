@@ -1,0 +1,151 @@
+:root {
+  font-family:
+    Segoe UI,
+    system-ui,
+    sans-serif;
+  color: #e5efed;
+  background: #0c1519;
+  color-scheme: dark;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+}
+header {
+  padding: 20px 5vw;
+  border-bottom: 1px solid #273b40;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+}
+header span,
+.hint {
+  font-size: 14px;
+  color: #a3b9b9;
+}
+main {
+  max-width: 1040px;
+  margin: auto;
+  padding: 35px 24px 70px;
+}
+.intro {
+  margin-bottom: 32px;
+}
+h1 {
+  font-size: 42px;
+  line-height: 1.1;
+  letter-spacing: -1px;
+}
+.eyebrow {
+  color: #82dbbe;
+  letter-spacing: 2px;
+  font-size: 12px;
+}
+.panel {
+  background: #132226;
+  border: 1px solid #2b3b40;
+  border-radius: 16px;
+  padding: 24px;
+  margin: 20px 0;
+}
+h2 {
+  font-size: 20px;
+  margin: 0 0 18px;
+}
+label {
+  display: block;
+  margin: 14px 0;
+}
+input,
+select {
+  display: block;
+  width: 100%;
+  padding: 12px;
+  margin-top: 7px;
+  background: #0b191d;
+  border: 1px solid #3e5359;
+  border-radius: 7px;
+  color: #edf8f6;
+  font: inherit;
+}
+button {
+  background: #8ce5c5;
+  color: #12271e;
+  border: 0;
+  border-radius: 7px;
+  padding: 12px 18px;
+  font: 600 14px Segoe UI;
+  cursor: pointer;
+  margin: 8px 8px 0 0;
+}
+button.secondary {
+  background: #253d43;
+  color: #d5e7e3;
+}
+button:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+.hint {
+  line-height: 1.6;
+}
+#notice,
+#downloadNotice,
+.notice {
+  color: #f0cd93;
+  white-space: pre-wrap;
+}
+.steps {
+  display: flex;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+.step {
+  padding: 10px 14px;
+  border-radius: 7px;
+  background: #21373c;
+}
+.entry {
+  padding: 14px 0;
+  border-top: 1px solid #2c4044;
+}
+.entry p {
+  margin: 5px 0;
+  color: #b8cac7;
+}
+a {
+  color: #92e1c5;
+}
+.actions {
+  margin-top: 16px;
+}
+#reconcile {
+  margin: 16px 0;
+  border-left: 3px solid #e1ba78;
+  padding: 0 15px;
+}
+#folderList {
+  display: flex;
+  flex-wrap: wrap;
+}
+@media (max-width: 640px) {
+  header {
+    display: block;
+  }
+  .columns {
+    display: block;
+  }
+  h1 {
+    font-size: 34px;
+  }
+  .panel {
+    padding: 18px;
+  }
+}

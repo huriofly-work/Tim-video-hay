@@ -1,0 +1,41 @@
+{
+  "manifest_version": 3,
+  "name": "Tìm video hay — Sheets & YouTube",
+  "version": "0.2.1",
+  "description": "Điền Sheets và đăng YouTube trong đúng profile đang mở ứng dụng.",
+  "permissions": [
+    "storage",
+    "tabs",
+    "scripting",
+    "debugger",
+    "clipboardRead",
+    "clipboardWrite"
+  ],
+  "host_permissions": [
+    "https://www.douyin.com/*",
+    "https://docs.google.com/*",
+    "https://www.youtube.com/*",
+    "https://studio.youtube.com/*",
+    "http://127.0.0.1:43127/*"
+  ],
+  "background": { "service_worker": "background-v2.js" },
+  "content_scripts": [
+    {
+      "matches": ["http://127.0.0.1:43127/*"],
+      "js": ["pair-v2.js"],
+      "run_at": "document_idle"
+    },
+    {
+      "matches": ["https://www.douyin.com/*"],
+      "js": ["observe.js"],
+      "run_at": "document_start",
+      "world": "MAIN"
+    },
+    {
+      "matches": ["https://www.douyin.com/*"],
+      "js": ["douyin-v2.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
+

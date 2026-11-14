@@ -1,0 +1,189 @@
+<!doctype html>
+<html lang="vi">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Tìm video hay · Nhập link</title>
+    <link rel="stylesheet" href="/style-v2.css" />
+  </head>
+  <body>
+    <header>
+      <strong>▶ Tìm video hay</strong
+      ><span id="connection">Đang kết nối tiện ích trong profile này…</span>
+    </header>
+    <main>
+      <section class="intro">
+        <p class="eyebrow">DOUYIN → GOOGLE SHEETS → YOUTUBE</p>
+        <h1>Bạn chọn video.<br />Chương trình xử lý.</h1>
+        <p>
+          Điền bảng, tải nguyên video và đăng không công khai qua trình duyệt
+          đang mở ứng dụng.
+        </p>
+        <a href="#download-only">Chỉ muốn tải video? Mở phần tải riêng</a>
+      </section>
+      <section class="panel">
+        <h2>Google Sheets</h2>
+        <form id="sheetSettingsForm">
+          <label
+            >Link bảng Google Sheets<input
+              id="sheetUrl"
+              type="url"
+              placeholder="https://docs.google.com/spreadsheets/d/.../edit"
+              required
+          /></label>
+          <label
+            >Tên tab trong bảng<input
+              id="sheetTab"
+              maxlength="100"
+              placeholder="Bảng công việc"
+              required
+          /></label>
+          <button id="sheetSave">Lưu bảng Google Sheets</button>
+        </form>
+        <p id="sheetNotice" class="notice" role="status" aria-live="polite"></p>
+        <p>
+          <a id="sheetLink" target="_blank" rel="noopener"
+            >Mở bảng đang cấu hình</a
+          >
+        </p>
+        <p class="hint">
+          Bảng mới cần bốn cột: Link video mẫu, Tên video, Ngách, Loại video.
+          Tên tab là tên trang ở dưới cùng trong bảng, không phải tên tệp. Áp
+          dụng cho công việc mới; công việc đang dừng/chờ vẫn giữ bảng đã chọn
+          lúc bắt đầu.
+        </p>
+      </section>
+      <section class="panel">
+        <h2>Kênh & nơi lưu</h2>
+        <form id="settingsForm">
+          <label
+            >Link kênh YouTube<input
+              id="channelUrl"
+              type="url"
+              placeholder="https://www.youtube.com/@kenhcuaBan"
+              required /></label
+          ><label
+            >Thư mục lưu video<input
+              id="outputDir"
+              placeholder="F:\Videos"
+              required /></label
+          ><button type="button" id="browse" class="secondary">
+            Chọn thư mục</button
+          ><button>Lưu cài đặt</button>
+        </form>
+        <p id="sheetInfo"></p>
+        <p class="hint">
+          Đăng nhập sẵn Google Sheets và YouTube Studio trong profile này. Cần
+          tiện ích 0.2.1 trong cùng profile; Chrome, Edge và Cốc Cốc. Khi thiếu
+          đăng nhập hoặc quyền sửa/đăng, công việc sẽ dừng và thông báo.
+        </p>
+      </section>
+      <section class="panel">
+        <h2>Thêm video</h2>
+        <form id="videoForm">
+          <label
+            >Link Douyin<input
+              id="sourceUrl"
+              placeholder="Link video hoặc link chia sẻ Douyin"
+              required
+          /></label>
+          <div class="columns">
+            <label
+              >Tên video<input
+                id="title"
+                placeholder="Tên tiếng Việt, tối đa 30 ký tự"
+                required /></label
+            ><label
+              >Ngách chủ đề<input id="niche" maxlength="100" required
+            /></label>
+          </div>
+          <p class="hint">
+            Tên dùng cho Sheets và file. ≤ 4 phút: Short; &gt; 4 phút: Long. Khi
+            đăng, giữ tiêu đề Studio tự điền và các trường tùy chọn mặc định.
+            Video luôn không dành cho trẻ em.
+          </p>
+          <button id="start">Điền bảng · Tải · Đăng YouTube</button>
+        </form>
+        <p id="notice" role="status" aria-live="polite"></p>
+      </section>
+      <section class="panel" id="progress" hidden>
+        <h2 id="taskTitle"></h2>
+        <p id="taskStatus" role="status" aria-live="polite"></p>
+        <div id="steps"></div>
+        <div class="actions">
+          <button id="resume">Tiếp tục / thử lại bước lỗi</button
+          ><button id="stop" class="secondary">Dừng công việc</button>
+        </div>
+        <div id="reconcile" hidden>
+          <p>
+            Upload đã bị gián đoạn. Kiểm tra tab YouTube Studio trước khi gửi
+            lại.
+          </p>
+          <label
+            >Link video YouTube đã tạo<input
+              id="youtubeResult"
+              placeholder="https://www.youtube.com/watch?v=…" /></label
+          ><button id="linkResult">Dùng video này để kiểm tra tiếp</button
+          ><button id="notCreated" class="secondary">
+            Tôi đã kiểm tra: chưa có video/bản nháp
+          </button>
+        </div>
+        <div id="resultLinks"></div>
+      </section>
+      <section class="panel" id="download-only">
+        <h2>Chỉ tải video</h2>
+        <p class="hint">
+          Tải file Douyin về máy. Không cần ngách, cấu hình kênh hoặc đăng nhập
+          Google; không điền Sheets và không đăng YouTube.
+        </p>
+        <form id="downloadForm">
+          <label
+            >Link Douyin<input
+              id="downloadUrl"
+              placeholder="Link video hoặc link chia sẻ Douyin"
+              required
+          /></label>
+          <label
+            >Tên video<input
+              id="downloadTitle"
+              placeholder="Tên tiếng Việt, tối đa 30 ký tự"
+              required
+          /></label>
+          <label
+            >Thư mục lưu riêng<input
+              id="downloadDir"
+              placeholder="F:\Videos"
+              required
+          /></label>
+          <button type="button" id="downloadBrowse" class="secondary">
+            Chọn thư mục tải riêng
+          </button>
+          <button id="downloadStart">Chỉ tải video về máy</button>
+        </form>
+        <p id="downloadNotice" role="status" aria-live="polite"></p>
+        <div id="downloadProgress" hidden>
+          <h3 id="downloadTaskTitle"></h3>
+          <p id="downloadTaskStatus" role="status" aria-live="polite"></p>
+          <button id="downloadResume">Tiếp tục / thử lại tải riêng</button>
+          <button id="downloadStop" class="secondary">Dừng tải riêng</button>
+          <div id="downloadResult"></div>
+        </div>
+        <h3>Lịch sử tải riêng</h3>
+        <div id="downloadHistory"><p>Chưa có lượt tải riêng.</p></div>
+      </section>
+      <section class="panel" id="folderPicker" hidden>
+        <h2>Chọn thư mục</h2>
+        <p id="folderPath"></p>
+        <button id="folderParent" class="secondary">Lên một cấp</button>
+        <div id="folderList"></div>
+        <button id="folderSelect">Chọn thư mục này</button>
+        <button id="folderClose" class="secondary">Đóng</button>
+      </section>
+      <section class="panel">
+        <h2>Lịch sử</h2>
+        <div id="history"><p>Chưa có công việc.</p></div>
+      </section>
+    </main>
+    <script src="/app-v2.js"></script>
+  </body>
+</html>

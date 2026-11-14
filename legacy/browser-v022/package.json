@@ -1,0 +1,13 @@
+{
+  "name": "tim-video-hay",
+  "version": "0.2.2",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "start": "node src/server-v2.mjs",
+    "test": "node scripts/test.mjs"
+  },
+  "engines": {
+    "node": ">=22"
+  }
+}
