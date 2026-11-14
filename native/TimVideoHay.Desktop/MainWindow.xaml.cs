@@ -29,7 +29,7 @@ public partial class MainWindow : Window
     private DateTimeOffset lastAttentionPresentation;
     public MainWindow(MainViewModel model)
     {
-        InitializeComponent(); this.model = model; DataContext = model;
+        InitializeComponent(); Title = AppInfo.WindowTitle; this.model = model; DataContext = model;
         MaxHeight = Math.Max(MinHeight, SystemParameters.WorkArea.Height);
         Height = Math.Min(Height, MaxHeight);
         tray = new System.Windows.Forms.NotifyIcon { Icon = System.Drawing.SystemIcons.Application, Text = "Tìm video hay", Visible = false };

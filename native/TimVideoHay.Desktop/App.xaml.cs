@@ -227,7 +227,7 @@ public partial class App : Application
 
             http = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false }) { Timeout = TimeSpan.FromMinutes(2) };
 
-            http.DefaultRequestHeaders.UserAgent.ParseAdd("TimVideoHay/0.3.35");
+            http.DefaultRequestHeaders.UserAgent.ParseAdd(AppInfo.UserAgent);
 
             var store = new LocalStore(DataRoot);
 

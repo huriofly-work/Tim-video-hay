@@ -1,4 +1,4 @@
-# Tìm video hay 0.3.44 — app Windows
+# Tìm video hay 0.3.45 — app Windows
 
 Bản 0.3.44 cải thiện tải video theo nguyên tắc chia đoạn và tái sử dụng kết nối: tối đa bốn luồng nhận phần mới ngay khi rảnh, ghi dữ liệu trong lúc tải và giữ từng vùng byte khi tạm dừng/mất mạng. Khi mở lại, app chỉ tải phần còn thiếu theo checkpoint đã xác minh. Tốc độ thực tế phụ thuộc mạng và CDN.
 
@@ -34,9 +34,9 @@ Tên video tối đa **30 ký tự, gồm dấu cách**, không tách dấu ti�
 
 ## Mở và cài đặt
 
-Chạy **Mo-ung-dung.cmd**, **Start.ps1** hoặc **artifacts/windows-x64-0.3.44/TimVideoHay.exe**. Bản tự chứa .NET/công cụ; không cần Node, Python hoặc .NET SDK. Giữ nguyên cả thư mục khi chuyển máy.
+Chạy **Mo-ung-dung.cmd**, **Start.ps1** hoặc **artifacts/windows-x64-0.3.45/TimVideoHay.exe**. Bản tự chứa .NET/công cụ; không cần Node, Python hoặc .NET SDK. Giữ nguyên cả thư mục khi chuyển máy.
 
-Gói chia sẻ có **Cai-dat.cmd** / **Go-cai-dat.cmd**. Cài vào `%LocalAppData%\Programs\TimVideoHay\0.3.44`, tạo shortcut Start Menu/desktop. Gỡ mặc định giữ dữ liệu. Bản dùng script, chưa có Setup.exe/MSI hoặc mục Installed apps. Xem [INSTALLATION.md](INSTALLATION.md).
+Gói chia sẻ có **Cai-dat.cmd** / **Go-cai-dat.cmd**. Cài vào `%LocalAppData%\Programs\TimVideoHay\0.3.45`, tạo shortcut Start Menu/desktop. Gỡ mặc định giữ dữ liệu. Bản dùng script, chưa có Setup.exe/MSI hoặc mục Installed apps. Xem [INSTALLATION.md](INSTALLATION.md).
 
 ## Sử dụng
 
@@ -162,7 +162,7 @@ Node/web/extension cũ ở `legacy/browser-v022`, không thuộc build hoặc đ
 
 ## Chia sẻ và bảo mật
 
-Bản chia sẻ nằm trong artifacts/sharing-windows-x64-0.3.44; không gửi bản cá nhân hoặc thư mục dữ liệu. Trong thư mục portable có Cai-dat.cmd, Go-cai-dat.cmd, Install.ps1, Uninstall.ps1 và INSTALLATION.md; không cần mã nguồn. Xem [SECURITY.md](SECURITY.md) để biết cách cài, tự thiết lập Google, bảo vệ dữ liệu và giới hạn của bản chưa ký. Máy phát triển dùng scripts/Build-Native.ps1 -ForSharing; chế độ này cấm nhúng cấu hình Google.
+Bản chia sẻ nằm trong artifacts/sharing-windows-x64-0.3.45; không gửi bản cá nhân hoặc thư mục dữ liệu. Trong thư mục portable có Cai-dat.cmd, Go-cai-dat.cmd, Install.ps1, Uninstall.ps1 và INSTALLATION.md; không cần mã nguồn. Xem [SECURITY.md](SECURITY.md) để biết cách cài, tự thiết lập Google, bảo vệ dữ liệu và giới hạn của bản chưa ký. Máy phát triển dùng scripts/Build-Native.ps1 -ForSharing; chế độ này cấm nhúng cấu hình Google.
 
 ## Thay đổi ngoài app: di chuyển hoặc xóa thủ công
 
