@@ -1,6 +1,6 @@
 ---
 name: release
-description: Phát hành bản mới (tag + GitHub Release), cài bản mới lên máy, hoặc khôi phục bản cài từ GitHub Release cho app Tìm video hay. Chỉ dùng khi người dùng giao việc release, cài đặt hoặc khôi phục.
+description: Dùng khi người dùng giao việc phát hành bản mới (tag + GitHub Release), cài bản mới lên máy hoặc khôi phục bản cài từ GitHub Release của app Tìm video hay.
 ---
 
 # Release và cài bản mới
