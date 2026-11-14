@@ -43,7 +43,7 @@ Stack hiện tại là C#/.NET 10 (`net10.0-windows`), WPF + WinForms cho tray, 
 
 Chạy từ gốc repo trên Windows x64. Máy phát triển dùng .NET SDK 10 (`10.0.401` đã kiểm tra). Gói portable cần WebView2 Runtime cho đường WebView, kèm runtime .NET và `ffprobe`. Không cần Node, Python hoặc yt-dlp cho bản native. NuGet dùng lock file và `native/NuGet.Config`. Chuẩn bị `ffprobe` khi thiếu bằng `./scripts/Prepare-NativeTools.ps1 -FfprobePath <đường-dẫn-ffprobe-đúng-hash>`.
 
-Lệnh build + test chuẩn là `scripts/Test-Native.ps1` (mục Testing của `CLAUDE.md`): kiểm tra script PowerShell, restore `--locked-mode` và build Release `Desktop` + `Tests`, rồi chạy console runner trên fixture mới trong `test-output/`.
+Lệnh build + test chuẩn là `scripts/Test-Native.ps1` (mục "Build và test" của `AGENTS.md`): kiểm tra script PowerShell, restore `--locked-mode` và build Release `Desktop` + `Tests`, rồi chạy console runner trên fixture mới trong `test-output/`.
 
 - **Build + test (14/11/2026, `main` sau 0.3.46 và bản nâng gói NuGet):** `Test-Native.ps1` exit 0, build Release **0 cảnh báo, 0 lỗi**, runner **333 ca đạt, 0 lỗi**. Các ca HTTP/CDN/Google dùng giả lập, nên đây là kết quả fixture, không thay cho nghiệm thu trên tài khoản hay đích thật. Chưa chạy audit lỗ hổng trực tuyến.
 - **UI (lần gần nhất 05/11/2026, 0.3.44):** smoke gói sharing 0.3.44 exit 0. Chạy WPF/WebView2 với profile riêng, fixture lịch sử 127 job, kiểm tra điều khiển và wizard ba bước dùng Google giả lập. Báo cáo tại `test-output/handoff-wpf-497ea85756b04a0bbad5f5e26953cf02/app.png.json` và `wizard.json`. Lượt này chưa nghiệm thu qua launcher mặc định, đăng nhập hoặc tải/đăng thật.
