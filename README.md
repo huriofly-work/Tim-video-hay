@@ -1,4 +1,6 @@
-# Tìm video hay 0.3.46 — app Windows
+# Tìm video hay 0.3.47 — app Windows
+
+Bản 0.3.47 thêm tab **Kênh block** bắt buộc trong file Google Sheets: mỗi công việc kiểm tra kênh của video trước khi tải, ghi bảng hay đăng YouTube, kể cả khi chỉ Tải. Video thuộc kênh bị block dừng ở Cần xử lý kèm số dòng trong tab. Cách tạo tab ở [GOOGLE-SETUP.md](GOOGLE-SETUP.md).
 
 Bản 0.3.44 cải thiện tải video theo nguyên tắc chia đoạn và tái sử dụng kết nối: tối đa bốn luồng nhận phần mới ngay khi rảnh, ghi dữ liệu trong lúc tải và giữ từng vùng byte khi tạm dừng/mất mạng. Khi mở lại, app chỉ tải phần còn thiếu theo checkpoint đã xác minh. Tốc độ thực tế phụ thuộc mạng và CDN.
 
@@ -34,9 +36,9 @@ Tên video tối đa **30 ký tự, gồm dấu cách**, không tách dấu ti�
 
 ## Mở và cài đặt
 
-Chạy **Mo-ung-dung.cmd**, **Start.ps1** hoặc **artifacts/windows-x64-0.3.46/TimVideoHay.exe**. Bản tự chứa .NET/công cụ; không cần Node, Python hoặc .NET SDK. Giữ nguyên cả thư mục khi chuyển máy.
+Chạy **Mo-ung-dung.cmd**, **Start.ps1** hoặc **artifacts/windows-x64-0.3.47/TimVideoHay.exe**. Bản tự chứa .NET/công cụ; không cần Node, Python hoặc .NET SDK. Giữ nguyên cả thư mục khi chuyển máy.
 
-Gói cài có **Cai-dat.cmd** / **Go-cai-dat.cmd**. Cài vào `%LocalAppData%\Programs\TimVideoHay\0.3.46`, tạo shortcut Start Menu/desktop. Gỡ mặc định giữ dữ liệu. Bản dùng script, chưa có Setup.exe/MSI hoặc mục Installed apps. Xem [INSTALLATION.md](INSTALLATION.md).
+Gói cài có **Cai-dat.cmd** / **Go-cai-dat.cmd**. Cài vào `%LocalAppData%\Programs\TimVideoHay\0.3.47`, tạo shortcut Start Menu/desktop. Gỡ mặc định giữ dữ liệu. Bản dùng script, chưa có Setup.exe/MSI hoặc mục Installed apps. Xem [INSTALLATION.md](INSTALLATION.md).
 
 ## Sử dụng
 
@@ -164,7 +166,7 @@ Chỉ có một bản build, không nhúng cấu hình Google. Nhập tệp OAut
 
 ## Chia sẻ và bảo mật
 
-Bản cài nằm trong artifacts/windows-x64-0.3.46 hoặc ZIP trên GitHub Release (cùng một bản); không gửi thư mục dữ liệu. Trong thư mục portable có Cai-dat.cmd, Go-cai-dat.cmd, Install.ps1, Uninstall.ps1 và INSTALLATION.md; không cần mã nguồn. Xem [SECURITY.md](SECURITY.md) để biết cách cài, tự thiết lập Google, bảo vệ dữ liệu và giới hạn của bản chưa ký. Máy phát triển dùng scripts/Build-Native.ps1; build luôn kiểm tra không có cấu hình Google bị nhúng.
+Bản cài nằm trong artifacts/windows-x64-0.3.47 hoặc ZIP trên GitHub Release (cùng một bản); không gửi thư mục dữ liệu. Trong thư mục portable có Cai-dat.cmd, Go-cai-dat.cmd, Install.ps1, Uninstall.ps1 và INSTALLATION.md; không cần mã nguồn. Xem [SECURITY.md](SECURITY.md) để biết cách cài, tự thiết lập Google, bảo vệ dữ liệu và giới hạn của bản chưa ký. Máy phát triển dùng scripts/Build-Native.ps1; build luôn kiểm tra không có cấu hình Google bị nhúng.
 
 ## Thay đổi ngoài app: di chuyển hoặc xóa thủ công
 

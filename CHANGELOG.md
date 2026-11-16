@@ -2,10 +2,12 @@
 
 Mỗi bản ghi một mục, mới nhất ở trên. Bằng chứng kiểm tra chi tiết của từng phiên bản nằm ở `VALIDATION.md`, đặc tả ở `SPEC.md`.
 
-## [Unreleased]
+## [0.3.47] - 2026-11-16
+
+Thêm tab Kênh block để chặn video từ các kênh không được lấy. Kèm CI trên GitHub Actions và nâng cấp thư viện.
 
 ### Added
-- Tab **Kênh block** bắt buộc khi kết nối Sheets, chọn riêng trong wizard và cài đặt, gợi ý theo tên và cho gán cột Link kênh. Mỗi công việc lưu đích tab riêng, đọc mới mỗi lần chạy và chặn theo sec_uid trước tải/ghi/đăng, kể cả chỉ Tải. Khi bị chặn, công việc chờ xử lý với số dòng, giữ checkpoint và không tự thử lại. Dòng trống được bỏ qua, link sai dừng để sửa; tab block chỉ đọc. Các ca kiểm thử và smoke dùng dữ liệu giả lập, chưa nghiệm thu trên bảng Google thật.
+- Tab **Kênh block** bắt buộc khi kết nối Sheets, chọn riêng trong wizard và cài đặt, gợi ý theo tên và cho gán cột Link kênh. Mỗi công việc lưu đích tab riêng, đọc mới mỗi lần chạy và chặn theo sec_uid trước tải/ghi/đăng, kể cả chỉ Tải. Khi bị chặn, công việc chờ xử lý với số dòng, giữ checkpoint và không tự thử lại. Dòng trống được bỏ qua, link sai dừng để sửa; tab block chỉ đọc. Hồ sơ cũ đã kết nối bảng cần chọn tab Kênh block trong Kết nối & cài đặt trước khi chạy công việc.
 - CI GitHub Actions (`.github/workflows/ci.yml`) chạy `scripts/Test-Native.ps1` trên `windows-latest` cho mỗi PR và push vào `main`; bỏ qua khi chỉ sửa file `.md`. CI tải ffmpeg 9.0.2 full_build từ GitHub release của gyan.dev, so SHA-256 của file nén rồi `Prepare-NativeTools.ps1` so tiếp SHA-256 của `ffprobe.exe` theo manifest. Action ghim theo SHA commit.
 - Dependabot nâng cấp các GitHub Action hằng tháng, gộp một PR.
 - Dependabot chờ bản mới phát hành đủ 14 ngày rồi mới đề xuất nâng cấp (cả NuGet lẫn GitHub Actions); cập nhật bảo mật không bị chờ.

@@ -1,4 +1,4 @@
-# Bàn giao kỹ thuật · Tìm video hay 0.3.46
+# Bàn giao kỹ thuật · Tìm video hay 0.3.47
 
 Cập nhật ngày 14/11/2026. Dành cho Claude Code tiếp tục trên thư mục local chứa repo này.
 
@@ -6,7 +6,7 @@ Cập nhật ngày 14/11/2026. Dành cho Claude Code tiếp tục trên thư m�
 
 ## 1. Mã nguồn cần tiếp nhận
 
-- **Bản Windows 0.3.46 nằm ở `main`** trên GitHub `huriofly-work/Tim-video-hay` (repo public), đã phát hành `v0.3.45` và `v0.3.46`. Ngày 14/11/2026 repo được tạo lại từ một commit đầu sạch; lịch sử, Issue, PR và release v0.3.44 của repo private cũ chỉ còn trong bản sao lưu local của chủ repo.
+- **Bản Windows 0.3.47 nằm ở `main`** (thêm tab Kênh block) trên GitHub `huriofly-work/Tim-video-hay` (repo public), đã phát hành `v0.3.45` và `v0.3.46`. Ngày 14/11/2026 repo được tạo lại từ một commit đầu sạch; lịch sử, Issue, PR và release v0.3.44 của repo private cũ chỉ còn trong bản sao lưu local của chủ repo.
 - **Repo:** Phiên bản duy nhất ở `VERSION`, tồn đọng ở `TODOS.md`, lịch sử ở `CHANGELOG.md`. `git worktree list` chỉ có worktree chính.
 - Được ignore và không có trong commit: `artifacts/` (gói build), `tools/` (ffprobe, cache), `test-output/`, `data/`, `bin/`/`obj/`, log, `packaging/google-oauth.desktop.json`. Clone mới cần chạy `./scripts/Prepare-NativeTools.ps1 -FfprobePath <ffprobe-đúng-hash>` trước khi test (ba ca cần `tools/ffprobe.exe`) và dùng thư mục fixture có đường dẫn ngắn: fixture dài khoảng 250 ký tự từng làm SQLite báo lỗi 14. Kết quả build/test gần nhất ở mục 4.
 
