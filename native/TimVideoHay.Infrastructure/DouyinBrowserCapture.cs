@@ -6,6 +6,14 @@ namespace TimVideoHay.Infrastructure;
 public interface IDouyinVideoBrowserReader
 {
     Task<JsonNode> ReadVideoMetadataAsync(SourceVideo source, CancellationToken ct, bool readCovers = true);
+    async Task<string> ReadAuthorSecUidAsync(SourceVideo source, CancellationToken ct)
+    {
+        var info = await ReadVideoMetadataAsync(source, ct, readCovers: false);
+        var secUid = info["source_sec_uid"]?.ToString() ?? "";
+        if (info["id"]?.ToString() != source.Id || !DouyinChannelReader.ValidSecUid(secUid))
+            throw new NeedsActionException("Không lấy được kênh của đúng video Douyin.", JobIssueKind.SourceUnavailable);
+        return secUid;
+    }
     void Forget(SourceVideo source) { }
 }
 

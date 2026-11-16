@@ -22,6 +22,7 @@ public sealed record JobAttention(string JobId, string Name, string Stage, strin
         else if (job.Issue?.Kind is not (JobIssueKind.InvalidData or JobIssueKind.MissingFolder))
             choices.Add(new(AttentionAction.Retry, job.Issue?.Kind switch {
                 JobIssueKind.Duplicate => "Đã xử lý trùng, kiểm tra lại",
+                JobIssueKind.BlockedChannel => "Đã bỏ block, kiểm tra lại",
                 JobIssueKind.Configuration => "Đã sửa cấu hình, kiểm tra lại",
                 JobIssueKind.FileAccess => "Đã sửa quyền/lưu trữ, kiểm tra lại",
                 JobIssueKind.SourceUnavailable => "Kiểm tra lại nguồn Douyin",
@@ -33,6 +34,7 @@ public sealed record JobAttention(string JobId, string Name, string Stage, strin
         choices.Add(new(AttentionAction.Inspect, "Mở công việc để kiểm tra"));
         choices.Add(new(AttentionAction.Pause, "Tạm dừng công việc"));
         return new(job.Id, job.Name, job.Stage, job.Message, choices) { IssueId = job.Issue?.Id, DependencyKey = job.Issue?.DependencyKey, Progress = job.DisplayProgress, Results = job.ResultsLabel, Guidance = job.Issue?.Kind switch {
+            JobIssueKind.BlockedChannel => "Bỏ kênh khỏi tab Kênh block rồi bấm Tiếp tục, hoặc xóa công việc khỏi lịch sử. Kết quả đã có được giữ nguyên.",
             JobIssueKind.Duplicate => "Đích đã có video hoặc thư mục trùng. Kiểm tra kết quả hiện có trước; chỉ kiểm tra lại sau khi bạn đã xử lý trùng.",
             JobIssueKind.InvalidData => "Dữ liệu không hợp lệ. Mở chi tiết để kiểm tra; không tự lặp lại thao tác với cùng dữ liệu sai.",
             JobIssueKind.Configuration => "Kiểm tra cấu hình và đích gốc của công việc. Đổi cài đặt mặc định chỉ áp dụng cho công việc mới.",

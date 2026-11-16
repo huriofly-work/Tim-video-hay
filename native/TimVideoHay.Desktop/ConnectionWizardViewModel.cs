@@ -21,6 +21,7 @@ public sealed class ConnectionWizardViewModel : INotifyPropertyChanged
     private string notice = "Chọn bảng cần ghi dữ liệu. Đăng nhập và cấp quyền trên trang Google mở trong trình duyệt.";
     private SheetTab? selectedTab;
     private SheetTab? selectedSourceTab;
+    private SheetTab? selectedBlockedTab;
     public event PropertyChangedEventHandler? PropertyChanged;
     public event Action? AttentionRequested;
     private bool noticeIsError;
@@ -40,9 +41,11 @@ public sealed class ConnectionWizardViewModel : INotifyPropertyChanged
     public string SheetName => draft.Sheet?.SpreadsheetName ?? "Chưa chọn bảng";
     public string TabName => draft.Sheet?.TabName ?? "";
     public string SourceTabName => draft.Sheet?.SourceChannelTabName ?? "";
+    public string BlockedTabName => draft.Sheet?.BlockedChannelTabName ?? "";
     public string ChannelName => draft.Channel?.Name ?? "Chưa chọn kênh";
     public SheetTab? SelectedTab { get => selectedTab; set { selectedTab = value; Notify(); CommandManager.InvalidateRequerySuggested(); } }
     public SheetTab? SelectedSourceTab { get => selectedSourceTab; set { selectedSourceTab = value; Notify(); CommandManager.InvalidateRequerySuggested(); } }
+    public SheetTab? SelectedBlockedTab { get => selectedBlockedTab; set { selectedBlockedTab = value; Notify(); CommandManager.InvalidateRequerySuggested(); } }
     public ICommand SelectSheetCommand { get; }
     public ICommand SelectChannelCommand { get; }
     public ICommand NextCommand { get; }
@@ -52,20 +55,22 @@ public sealed class ConnectionWizardViewModel : INotifyPropertyChanged
     public ICommand OpenChannelCommand { get; }
     public ICommand ChooseVideoColumnsCommand { get; }
     public ICommand ChooseChannelColumnsCommand { get; }
+    public ICommand ChooseBlockedColumnsCommand { get; }
 
-    public ConnectionWizardViewModel(GoogleConnectionDraft draft, CancellationToken parentToken, Func<SheetTarget, bool, int?, CancellationToken, Task<SheetColumnSelection>>? columnReader = null)
+    public ConnectionWizardViewModel(GoogleConnectionDraft draft, CancellationToken parentToken, Func<SheetTarget, bool, int?, CancellationToken, bool, Task<SheetColumnSelection>>? columnReader = null)
     {
         this.draft = draft; this.parentToken = parentToken; Update();
-        async Task ChooseColumns(bool channel, CancellationToken token)
+        async Task ChooseColumns(bool channel, CancellationToken token, bool blocked = false)
         {
-            var tab = (channel ? SelectedSourceTab : SelectedTab)!; var current = draft.Sheet!;
-            var target = current with { SheetId = tab.Id, TabName = tab.Name, Columns = channel ? current.SourceChannelSheetId == tab.Id ? current.SourceChannelColumns : null : current.SheetId == tab.Id ? current.Columns : null };
-            var dialog = new SheetColumnsWindow(tab.Name, channel, token, (row, ct) => columnReader!(target, channel, row, ct)) { Owner = System.Windows.Application.Current.Windows.OfType<ConnectionWizardWindow>().FirstOrDefault() ?? System.Windows.Application.Current.MainWindow };
-            if (dialog.ShowDialog() == true) { draft.SetColumns(tab.Id, dialog.Mapping, channel); Notice = "Đã chọn cột; kết nối chỉ được lưu khi xác nhận cuối."; }
+            var tab = (blocked ? SelectedBlockedTab : channel ? SelectedSourceTab : SelectedTab)!; var current = draft.Sheet!;
+            var target = current with { SheetId = tab.Id, TabName = tab.Name, Columns = blocked ? current.BlockedChannelSheetId == tab.Id ? current.BlockedChannelColumns : null : channel ? current.SourceChannelSheetId == tab.Id ? current.SourceChannelColumns : null : current.SheetId == tab.Id ? current.Columns : null };
+            var dialog = new SheetColumnsWindow(tab.Name, channel, token, (row, ct) => columnReader!(target, channel, row, ct, blocked), blocked) { Owner = System.Windows.Application.Current.Windows.OfType<ConnectionWizardWindow>().FirstOrDefault() ?? System.Windows.Application.Current.MainWindow };
+            if (dialog.ShowDialog() == true) { draft.SetColumns(tab.Id, dialog.Mapping, channel, blocked); Notice = "Đã chọn cột; kết nối chỉ được lưu khi xác nhận cuối."; }
             await Task.CompletedTask;
         }
         ChooseVideoColumnsCommand = Command(ct => ChooseColumns(false, ct), () => columnReader is not null && HasSheet && SelectedTab is not null);
         ChooseChannelColumnsCommand = Command(ct => ChooseColumns(true, ct), () => columnReader is not null && HasSheet && SelectedSourceTab is not null);
+        ChooseBlockedColumnsCommand = Command(ct => ChooseColumns(false, ct, blocked: true), () => columnReader is not null && HasSheet && SelectedBlockedTab is not null);
         SelectSheetCommand = Command(async ct => {
             Notice = "Chọn một bảng Google Sheets trong trình duyệt. App sẽ chờ tối đa 5 phút.";
             await draft.SelectSheetAsync(ct); UpdateTabs(); Notice = "Đã chọn bảng. Chọn đúng tab dữ liệu rồi bấm Tiếp tục.";
@@ -75,9 +80,10 @@ public sealed class ConnectionWizardViewModel : INotifyPropertyChanged
             await draft.SelectChannelAsync(ct); Notice = "Kiểm tra tên kênh đã xác minh bên dưới rồi bấm Tiếp tục.";
         });
         NextCommand = Command(async ct => {
-            if (IsSheet) { Notice = "Đang kiểm tra tab video và lưu tab kênh nguồn…"; await draft.ContinueSheetAsync(SelectedTab!.Id, ct, SelectedSourceTab!.Id); Notice = "Chọn kênh YouTube sẽ nhận video."; }
+            if (IsSheet) { Notice = "Đang kiểm tra tab video và Kênh block…"; await draft.ContinueSheetAsync(SelectedTab!.Id, ct, SelectedSourceTab!.Id, SelectedBlockedTab!.Id); Notice = "Chọn kênh YouTube sẽ nhận video."; }
             else { draft.ContinueChannel(); Notice = "Kiểm tra bảng, tab và kênh trước khi xác nhận."; }
-        }, () => IsSheet ? SelectedTab is not null && SelectedSourceTab is not null && SelectedTab.Id != SelectedSourceTab.Id : IsChannel && HasChannel);
+        }, () => IsSheet ? SelectedTab is not null && SelectedSourceTab is not null && SelectedBlockedTab is not null
+            && SelectedTab.Id != SelectedSourceTab.Id && SelectedBlockedTab.Id != SelectedTab.Id && SelectedBlockedTab.Id != SelectedSourceTab.Id : IsChannel && HasChannel);
         BackCommand = Command(_ => { draft.Back(); UpdateTabs(); Notice = "Bạn có thể đổi lựa chọn trước khi xác nhận."; return Task.CompletedTask; }, () => CanBack);
         ConfirmCommand = Command(async ct => { await draft.CommitAsync(ct); Completed?.Invoke(); }, () => IsConfirm);
         CancelCommand = new AsyncCommand(() => { CancelRequested?.Invoke(); return Task.CompletedTask; }, () => true, Error);
@@ -106,11 +112,13 @@ public sealed class ConnectionWizardViewModel : INotifyPropertyChanged
         SelectedTab = System.Linq.Enumerable.FirstOrDefault(Tabs, t => t.Id == draft.Sheet?.SheetId);
         SelectedSourceTab = System.Linq.Enumerable.FirstOrDefault(Tabs, t => t.Id == draft.Sheet?.SourceChannelSheetId)
             ?? System.Linq.Enumerable.FirstOrDefault(Tabs, t => t.Name == "Kênh nguồn" && t.Id != SelectedTab?.Id);
+        SelectedBlockedTab = Tabs.FirstOrDefault(t => t.Id == draft.Sheet?.BlockedChannelSheetId)
+            ?? Tabs.FirstOrDefault(t => t.Name == "Kênh block" && t.Id != SelectedTab?.Id && t.Id != SelectedSourceTab?.Id);
     }
     private void Update()
     {
         if (Tabs.Count == 0) UpdateTabs();
-        foreach (var property in new[] { nameof(IsSheet), nameof(IsChannel), nameof(IsConfirm), nameof(CanBack), nameof(HasSheet), nameof(HasChannel), nameof(Heading), nameof(SheetName), nameof(TabName), nameof(SourceTabName), nameof(ChannelName) }) Notify(property);
+        foreach (var property in new[] { nameof(IsSheet), nameof(IsChannel), nameof(IsConfirm), nameof(CanBack), nameof(HasSheet), nameof(HasChannel), nameof(Heading), nameof(SheetName), nameof(TabName), nameof(SourceTabName), nameof(BlockedTabName), nameof(ChannelName) }) Notify(property);
     }
     private void Notify([CallerMemberName] string property = "") => PropertyChanged?.Invoke(this, new(property));
 }

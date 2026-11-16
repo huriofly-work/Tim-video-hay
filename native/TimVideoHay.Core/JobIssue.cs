@@ -1,6 +1,6 @@
 ﻿namespace TimVideoHay.Core;
 
-public enum JobIssueKind { General, Authentication, UnknownResult, MissingFolder, Duplicate, InvalidData, Configuration, SourceUnavailable, RateLimited, Network, FileAccess }
+public enum JobIssueKind { General, Authentication, UnknownResult, MissingFolder, Duplicate, InvalidData, Configuration, SourceUnavailable, RateLimited, Network, FileAccess, BlockedChannel }
 public sealed record JobIssue(string Id, JobIssueKind Kind, JobActions AffectedActions, string Message, DateTimeOffset Created,
     string? DependencyKey = null, DateTimeOffset? RetryAt = null)
 {
@@ -11,8 +11,8 @@ public sealed record JobIssue(string Id, JobIssueKind Kind, JobActions AffectedA
             : error is HttpRequestException or OperationCanceledException ? JobIssueKind.Network
             : error is ArgumentException or InvalidDataException ? JobIssueKind.InvalidData
             : error is IOException or UnauthorizedAccessException ? JobIssueKind.FileAccess : JobIssueKind.General;
-        // Unknown remote writes must always be checked, regardless of the original exception type.
-        if (job.UnknownResult && kind != JobIssueKind.Authentication) kind = JobIssueKind.UnknownResult;
+        // Keep the block reason while existing unknown writes still require reconciliation.
+        if (job.UnknownResult && kind is not (JobIssueKind.Authentication or JobIssueKind.BlockedChannel)) kind = JobIssueKind.UnknownResult;
         var affected = job.StageAction == JobActions.None ? job.Work : job.StageAction;
         string? dependency = kind == JobIssueKind.Authentication ? CredentialKey(job, affected)
             : kind == JobIssueKind.RateLimited && error is RetryLaterException retry ? retry.DependencyKey : null;
@@ -20,6 +20,7 @@ public sealed record JobIssue(string Id, JobIssueKind Kind, JobActions AffectedA
     }
     public static string? CredentialKey(VideoJob job, JobActions action)
     {
+        if (job.IsCheckingBlockList) return "sheets:" + job.BlockListSheet!.CredentialId;
         if (action.HasFlag(JobActions.WriteSheet) && job.Sheet is not null) return "sheets:" + job.Sheet.CredentialId;
         if (action.HasFlag(JobActions.UploadYouTube) && job.Channel is not null) return "youtube:" + job.Channel.CredentialId;
         return null;

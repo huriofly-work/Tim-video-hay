@@ -10,7 +10,14 @@ public sealed class DouyinDataReader(DouyinPublicReader publicReader, IDouyinVid
 {
     private readonly SemaphoreSlim gate = new(1, 1);
     public void Forget(SourceVideo source) { publicReader.Forget(source); guestVideo.Forget(source); accountVideo.Forget(source); }
-    public async Task<JsonNode> ReadVideoMetadataAsync(SourceVideo source, CancellationToken ct, bool readCovers = true)
+    public Task<JsonNode> ReadVideoMetadataAsync(SourceVideo source, CancellationToken ct, bool readCovers = true)
+        => ReadRequiredAsync(source, ct, readCovers, requireAuthor: false);
+    public async Task<string> ReadAuthorSecUidAsync(SourceVideo source, CancellationToken ct)
+    {
+        var info = await ReadRequiredAsync(source, ct, readCovers: false, requireAuthor: true);
+        return publicReader.Author(source) ?? info["source_sec_uid"]!.ToString();
+    }
+    private async Task<JsonNode> ReadRequiredAsync(SourceVideo source, CancellationToken ct, bool readCovers, bool requireAuthor)
     {
         await gate.WaitAsync(ct);
         try
@@ -19,7 +26,7 @@ public sealed class DouyinDataReader(DouyinPublicReader publicReader, IDouyinVid
             JsonNode? info; DouyinGuestVerificationException? interaction = null;
             try { info = await publicReader.ReadAsync(source, readCovers, ct); }
             catch (DouyinGuestVerificationException ex) { info = null; interaction = ex; }
-            if (Valid(info, source, readCovers)) return info!;
+            if (Valid(info, source, readCovers, requireAuthor)) return info!;
             if (interaction?.RequiresLogin != true)
             {
                 publicReader.EnsureAllowed();
@@ -27,7 +34,7 @@ public sealed class DouyinDataReader(DouyinPublicReader publicReader, IDouyinVid
                 try { info = await guestVideo.ReadVideoMetadataAsync(source, ct, readCovers); }
                 catch (DouyinTerminalException ex) { if (ex.Blocked) publicReader.SuspendForChallenge(ex.RetryAt); throw; }
                 catch (NeedsActionException ex) when (ex.Kind is JobIssueKind.General or JobIssueKind.SourceUnavailable) { info = null; }
-                if (Valid(info, source, readCovers))
+                if (Valid(info, source, readCovers, requireAuthor))
                 {
                     publicReader.Remember(source, info!, qualityChecked: readCovers, coversChecked: readCovers); return info!;
                 }
@@ -41,7 +48,7 @@ public sealed class DouyinDataReader(DouyinPublicReader publicReader, IDouyinVid
                 : "Phiên khách chưa đủ dữ liệu video. App tự dùng phiên Douyin đã đăng nhập để đọc đúng video và tiếp tục từ tiến độ đã lưu.");
             try { info = await accountVideo.ReadVideoMetadataAsync(source, ct, readCovers); }
             catch (DouyinTerminalException ex) { if (ex.Blocked) publicReader.SuspendForChallenge(ex.RetryAt); throw; }
-            if (!Valid(info, source, readCovers)) throw new NeedsActionException("Douyin chưa cung cấp dữ liệu hợp lệ của đúng video sau khi thử nguồn công khai, khách và tài khoản. Công việc và tiến độ được giữ.", JobIssueKind.SourceUnavailable);
+            if (!Valid(info, source, readCovers, requireAuthor)) throw new NeedsActionException("Douyin chưa cung cấp dữ liệu hợp lệ của đúng video sau khi thử nguồn công khai, khách và tài khoản. Công việc và tiến độ được giữ.", JobIssueKind.SourceUnavailable);
             publicReader.Remember(source, info!, qualityChecked: readCovers, coversChecked: readCovers); return info!;
         }
         finally { gate.Release(); }
@@ -63,7 +70,8 @@ public sealed class DouyinDataReader(DouyinPublicReader publicReader, IDouyinVid
         }
         finally { gate.Release(); }
     }
-    private static bool Valid(JsonNode? info, SourceVideo source, bool download) => info?["id"]?.ToString() == source.Id
-        && (download ? info["formats"] is JsonArray formats && formats.Any(f => f is not null && DownloadPolicy.Usable(f) && DouyinHttp.Allowed(f["url"]?.ToString() ?? ""))
+    private static bool Valid(JsonNode? info, SourceVideo source, bool download, bool requireAuthor) => info?["id"]?.ToString() == source.Id
+        && (requireAuthor ? DouyinChannelReader.ValidSecUid(info["source_sec_uid"]?.ToString() ?? "")
+            : download ? info["formats"] is JsonArray formats && formats.Any(f => f is not null && DownloadPolicy.Usable(f) && DouyinHttp.Allowed(f["url"]?.ToString() ?? ""))
             : info["source_duration_ms"] is JsonValue v && v.TryGetValue<long>(out var ms) && ms > 0);
 }

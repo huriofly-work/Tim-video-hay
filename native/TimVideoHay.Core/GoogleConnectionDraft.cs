@@ -23,7 +23,15 @@ public sealed class GoogleConnectionDraft(IGoogleConnectionService service,
     public ConnectionStep Step { get; private set; }
     public SheetTarget? Sheet { get; private set; } = existingSheet;
     public ChannelTarget? Channel { get; private set; } = existingChannel;
-    public IReadOnlyList<SheetTab> Tabs { get; private set; } = existingSheet is null ? [] : [new(existingSheet.SheetId, existingSheet.TabName)];
+    public IReadOnlyList<SheetTab> Tabs { get; private set; } = ExistingTabs(existingSheet);
+    private static IReadOnlyList<SheetTab> ExistingTabs(SheetTarget? sheet)
+    {
+        if (sheet is null) return [];
+        var tabs = new List<SheetTab> { new(sheet.SheetId, sheet.TabName) };
+        if (sheet.SourceChannelSheetId is int source) tabs.Add(new(source, sheet.SourceChannelTabName ?? "Kênh nguồn"));
+        if (sheet.BlockedChannelSheetId is int blocked) tabs.Add(new(blocked, sheet.BlockedChannelTabName ?? "Kênh block"));
+        return tabs.DistinctBy(t => t.Id).ToArray();
+    }
 
     public async Task SelectSheetAsync(CancellationToken ct)
     {
@@ -36,19 +44,22 @@ public sealed class GoogleConnectionDraft(IGoogleConnectionService service,
             if (selected.Tabs.Count == 0) throw new NeedsActionException("Bảng đã chọn không có tab dữ liệu.");
             var previous = Sheet?.CredentialId;
             var tab = selected.Tabs.FirstOrDefault(t => Sheet is { } prior && selected.Id == prior.SpreadsheetId && t.Id == prior.SheetId)
-                ?? selected.Tabs.FirstOrDefault(t => t.Name != "Kênh nguồn") ?? selected.Tabs[0];
+                ?? selected.Tabs.FirstOrDefault(t => t.Name is not ("Kênh nguồn" or "Kênh block")) ?? selected.Tabs[0];
             var source = selected.Tabs.FirstOrDefault(t => Sheet is { } prior && selected.Id == prior.SpreadsheetId && t.Id == prior.SourceChannelSheetId)
                 ?? selected.Tabs.FirstOrDefault(t => t.Name == "Kênh nguồn" && t.Id != tab.Id);
+            var blocked = selected.Tabs.FirstOrDefault(t => Sheet is { } prior && selected.Id == prior.SpreadsheetId && t.Id == prior.BlockedChannelSheetId)
+                ?? selected.Tabs.FirstOrDefault(t => t.Name == "Kênh block" && t.Id != tab.Id && t.Id != source?.Id);
             var sameFile = Sheet?.SpreadsheetId == selected.Id;
             Sheet = new(selected.Id, tab.Id, selected.Name, tab.Name, selected.CredentialId, source?.Id, source?.Name,
-                sameFile && Sheet?.SheetId == tab.Id ? Sheet.Columns : null, sameFile && Sheet?.SourceChannelSheetId == source?.Id ? Sheet?.SourceChannelColumns : null);
+                sameFile && Sheet?.SheetId == tab.Id ? Sheet.Columns : null, sameFile && Sheet?.SourceChannelSheetId == source?.Id ? Sheet?.SourceChannelColumns : null,
+                blocked?.Id, blocked?.Name, sameFile && Sheet?.BlockedChannelSheetId == blocked?.Id ? Sheet?.BlockedChannelColumns : null);
             Tabs = selected.Tabs; sheetChecked = false; Step = ConnectionStep.Sheet;
             if (previous != selected.CredentialId) await RetireAsync(previous);
         }
         finally { gate.Release(); }
     }
 
-    public async Task ContinueSheetAsync(int tabId, CancellationToken ct, int? sourceTabId = null)
+    public async Task ContinueSheetAsync(int tabId, CancellationToken ct, int? sourceTabId = null, int? blockedTabId = null)
     {
         await gate.WaitAsync(ct);
         try
@@ -57,12 +68,18 @@ public sealed class GoogleConnectionDraft(IGoogleConnectionService service,
             var tab = Tabs.SingleOrDefault(t => t.Id == tabId) ?? throw new NeedsActionException("Chọn một tab trong bảng đã liên kết.");
             var previous = Sheet ?? throw new NeedsActionException("Chọn bảng trước.");
             var target = previous with { SheetId = tab.Id, TabName = tab.Name, Columns = previous.SheetId == tab.Id ? previous.Columns : null };
+            sourceTabId ??= previous.SourceChannelSheetId;
             if (sourceTabId is int sourceId)
             {
                 var source = Tabs.SingleOrDefault(t => t.Id == sourceId) ?? throw new NeedsActionException("Chọn tab kênh nguồn trong cùng file.");
                 if (source.Id == tab.Id) throw new NeedsActionException("Tab video và tab kênh nguồn phải khác nhau.");
                 target = target with { SourceChannelSheetId = source.Id, SourceChannelTabName = source.Name, SourceChannelColumns = previous.SourceChannelSheetId == source.Id ? previous.SourceChannelColumns : null };
             }
+            else throw new NeedsActionException("Chọn tab Kênh nguồn trong cùng file.");
+            blockedTabId ??= previous.BlockedChannelSheetId;
+            var blocked = Tabs.SingleOrDefault(t => t.Id == blockedTabId) ?? throw new NeedsActionException("Chọn tab Kênh block trong cùng file.");
+            if (blocked.Id == tab.Id || blocked.Id == sourceTabId) throw new NeedsActionException("Tab Kênh block phải khác tab video và tab Kênh nguồn.");
+            target = target with { BlockedChannelSheetId = blocked.Id, BlockedChannelTabName = blocked.Name, BlockedChannelColumns = previous.BlockedChannelSheetId == blocked.Id ? previous.BlockedChannelColumns : null };
             sheetChecked = false;
             await service.CheckSheetAsync(target, ct);
             ct.ThrowIfCancellationRequested();
@@ -92,13 +109,14 @@ public sealed class GoogleConnectionDraft(IGoogleConnectionService service,
         if (!sheetChecked || Step != ConnectionStep.Channel || Channel is null) throw new NeedsActionException("Chọn bảng và xác minh kênh trước.");
         Step = ConnectionStep.Confirm;
     }
-    public void SetColumns(int tabId, SheetColumnMapping mapping, bool channel)
+    public void SetColumns(int tabId, SheetColumnMapping mapping, bool channel, bool blocked = false)
     {
         RequireOpen(); var tab = Tabs.SingleOrDefault(t => t.Id == tabId) ?? throw new NeedsActionException("Chọn tab trong file đã liên kết.");
         var target = Sheet ?? throw new NeedsActionException("Chọn bảng trước.");
-        if (mapping.Columns.Length != (channel ? 5 : 4) || mapping.Columns.Distinct().Count() != mapping.Columns.Length || mapping.Columns.Any(c => c is < 0 or >= 200) || mapping.HeaderRow is < 0 or >= 30)
+        if (mapping.Columns.Length != (blocked ? 1 : channel ? 5 : 4) || mapping.Columns.Distinct().Count() != mapping.Columns.Length || mapping.Columns.Any(c => c is < 0 or >= 200) || mapping.HeaderRow is < 0 or >= 30)
             throw new NeedsActionException("Chọn đầy đủ các cột khác nhau và hàng tiêu đề hợp lệ.");
-        Sheet = channel ? target with { SourceChannelSheetId = tab.Id, SourceChannelTabName = tab.Name, SourceChannelColumns = mapping }
+        Sheet = blocked ? target with { BlockedChannelSheetId = tab.Id, BlockedChannelTabName = tab.Name, BlockedChannelColumns = mapping }
+            : channel ? target with { SourceChannelSheetId = tab.Id, SourceChannelTabName = tab.Name, SourceChannelColumns = mapping }
             : target with { SheetId = tab.Id, TabName = tab.Name, Columns = mapping };
         sheetChecked = false;
     }

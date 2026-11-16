@@ -75,7 +75,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
     public int TabIndex { get => Get(0); set { if (Set(value)) Notify(nameof(SelectedJob)); } }
     public string Privacy { get => settings.Privacy; set { settings.Privacy = value; Notify(); Notify(nameof(PrivacyLabel)); PersistSettings(); } }
     public string PrivacyLabel => "Chế độ đăng: " + PrivacyOptions.Single(p => p.Value == settings.Privacy).Label + ". Luôn không dành cho trẻ em.";
-    public string SheetLabel => settings.Sheet is null ? "Bảng: chưa chọn" : $"Bảng: {settings.Sheet.SpreadsheetName} · Video: {settings.Sheet.TabName} · Kênh nguồn: {settings.Sheet.SourceChannelTabName ?? "Kênh nguồn"}";
+    public string SheetLabel => settings.Sheet is null ? "Bảng: chưa chọn" : $"Bảng: {settings.Sheet.SpreadsheetName} · Video: {settings.Sheet.TabName} · Kênh nguồn: {settings.Sheet.SourceChannelTabName ?? "Kênh nguồn"} · Kênh block: {settings.Sheet.BlockedChannelTabName ?? "chưa chọn"}";
     public string SheetTabsStatus { get => Get(""); private set => Set(value); }
     public string ShortMinutes
     {
@@ -93,7 +93,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         milliseconds = (long)decimal.Round(minutes * 60000, 0, MidpointRounding.AwayFromZero); return true;
     }
     public string ThresholdStatus => TryThreshold(out _) ? $"≤ {ShortMinutes} phút: Short; lớn hơn: Long. Áp dụng cả video và 10 video của kênh; công việc cũ giữ mốc đã lưu." : "Nhập mốc từ 1 giây đến 1440 phút, ví dụ 5 hoặc 2,5 phút.";
-    public string ColumnMappingLabel => settings.Sheet is null ? "Chọn bảng và hai tab trước." : "Video: " + MappingLabel(settings.Sheet.Columns) + " · Kênh nguồn: " + MappingLabel(settings.Sheet.SourceChannelColumns);
+    public string ColumnMappingLabel => settings.Sheet is null ? "Chọn bảng và ba tab trước." : "Video: " + MappingLabel(settings.Sheet.Columns) + " · Kênh nguồn: " + MappingLabel(settings.Sheet.SourceChannelColumns) + " · Kênh block: " + MappingLabel(settings.Sheet.BlockedChannelColumns);
     private static string MappingLabel(SheetColumnMapping? mapping) => mapping is null ? "chưa chọn; tự nhận diện tên cột cũ" : "hàng " + (mapping.HeaderRow + 1) + " / " + string.Join(", ", mapping.Columns.Select(ColumnLetter));
     private static string ColumnLetter(int index) { var name = ""; for (var x = index + 1; x > 0; x = (x - 1) / 26) name = (char)('A' + (x - 1) % 26) + name; return name; }
     public SheetTab? SelectedSourceChannelTab
@@ -102,11 +102,28 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         set
         {
             if (!Set(value) || value is null || settings.Sheet is null || loading) return;
-            if (value.Id == settings.Sheet.SheetId) { SourceTabError = "Chọn tab khác tab video; app giữ lựa chọn cũ."; loading = true; SelectedSourceChannelTab = SheetTabs.FirstOrDefault(t => t.Id == settings.Sheet.SourceChannelSheetId); loading = false; return; }
+            if (value.Id == settings.Sheet.SheetId || value.Id == settings.Sheet.BlockedChannelSheetId) { SourceTabError = "Chọn tab khác tab video và Kênh block; app giữ lựa chọn cũ."; loading = true; SelectedSourceChannelTab = SheetTabs.FirstOrDefault(t => t.Id == settings.Sheet.SourceChannelSheetId); loading = false; return; }
             SourceTabError = ""; VideoTabError = "";
             settings.Sheet = settings.Sheet with { SourceChannelSheetId = value.Id, SourceChannelTabName = value.Name, SourceChannelColumns = null };
             Notify(nameof(ColumnMappingLabel));
             Notify(nameof(SheetLabel)); PersistSettings();
+        }
+    }
+    public string BlockedTabError { get => Get(""); private set => Set(value); }
+    public SheetTab? SelectedBlockedChannelTab
+    {
+        get => Get<SheetTab?>(null);
+        set
+        {
+            if (!Set(value) || value is null || settings.Sheet is null || loading) return;
+            if (value.Id == settings.Sheet.SheetId || value.Id == settings.Sheet.SourceChannelSheetId)
+            {
+                BlockedTabError = "Chọn tab khác tab video và Kênh nguồn; app giữ lựa chọn cũ.";
+                loading = true; SelectedBlockedChannelTab = SheetTabs.FirstOrDefault(t => t.Id == settings.Sheet.BlockedChannelSheetId); loading = false; return;
+            }
+            BlockedTabError = ""; SourceTabError = ""; VideoTabError = "";
+            settings.Sheet = settings.Sheet with { BlockedChannelSheetId = value.Id, BlockedChannelTabName = value.Name, BlockedChannelColumns = null };
+            Notify(nameof(ColumnMappingLabel)); Notify(nameof(SheetLabel)); PersistSettings();
         }
     }
     public string ChannelLabel => settings.Channel is null ? "YouTube: chưa kết nối" : $"YouTube: {settings.Channel.Name}  ({settings.Channel.ChannelId})";
@@ -149,7 +166,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         set
         {
             if (!Set(value) || value is null || settings.Sheet is null || loading) return;
-            if (value.Id == settings.Sheet.SourceChannelSheetId) { VideoTabError = "Chọn tab khác tab kênh nguồn; app giữ lựa chọn cũ."; loading = true; SelectedTab = SheetTabs.FirstOrDefault(t => t.Id == settings.Sheet.SheetId); loading = false; return; }
+            if (value.Id == settings.Sheet.SourceChannelSheetId || value.Id == settings.Sheet.BlockedChannelSheetId) { VideoTabError = "Chọn tab khác tab kênh nguồn và Kênh block; app giữ lựa chọn cũ."; loading = true; SelectedTab = SheetTabs.FirstOrDefault(t => t.Id == settings.Sheet.SheetId); loading = false; return; }
             SourceTabError = ""; VideoTabError = "";
             settings.Sheet = settings.Sheet with { SheetId = value.Id, TabName = value.Name, Columns = null };
             Notify(nameof(ColumnMappingLabel));
@@ -173,6 +190,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
     public ICommand RefreshSheetTabsCommand { get; }
     public ICommand ChooseVideoColumnsCommand { get; }
     public ICommand ChooseChannelColumnsCommand { get; }
+    public ICommand ChooseBlockedColumnsCommand { get; }
     public ICommand OpenChannelCommand { get; }
     public ICommand OpenFileCommand { get; }
     public ICommand OpenVideoCommand { get; }
@@ -224,6 +242,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         RefreshSheetTabsCommand = Command(() => LoadSheetTabsAsync(Ct), () => settings.Sheet is not null, independent: true);
         ChooseVideoColumnsCommand = Command(() => ChooseColumnsAsync(false), () => settings.Sheet is not null);
         ChooseChannelColumnsCommand = Command(() => ChooseColumnsAsync(true), () => settings.Sheet?.SourceChannelSheetId is not null);
+        ChooseBlockedColumnsCommand = Command(() => ChooseColumnsAsync(false, blocked: true), () => settings.Sheet?.BlockedChannelSheetId is not null);
         OpenChannelCommand = Command(() => OpenAsync("https://www.youtube.com/channel/" + settings.Channel!.ChannelId), () => settings.Channel is not null, independent: true);
         OpenFileCommand = Command(() => OpenAsync(SelectedJob!.Media!.Path), () => SelectedJob?.Media is not null && File.Exists(SelectedJob.Media.Path), OperationArea.History);
         OpenVideoCommand = Command(() => OpenAsync("https://www.youtube.com/watch?v=" + SelectedJob!.YouTubeId), () => SelectedJob?.YouTubeId is not null, OperationArea.History);
@@ -261,7 +280,8 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         await UpdateGoogleConfigurationAsync();
         // Keep the configured tab immediately; refresh the actual list when Picker is used again.
         if (settings.Sheet is not null) { var tab = new SheetTab(settings.Sheet.SheetId, settings.Sheet.TabName); SheetTabs.Add(tab); SelectedTab = tab;
-            if (settings.Sheet.SourceChannelSheetId is int id) { var channel = new SheetTab(id, settings.Sheet.SourceChannelTabName ?? "Kênh nguồn"); SheetTabs.Add(channel); SelectedSourceChannelTab = channel; } }
+            if (settings.Sheet.SourceChannelSheetId is int id) { var channel = new SheetTab(id, settings.Sheet.SourceChannelTabName ?? "Kênh nguồn"); SheetTabs.Add(channel); SelectedSourceChannelTab = channel; }
+            if (settings.Sheet.BlockedChannelSheetId is int blockedId) { var blocked = new SheetTab(blockedId, settings.Sheet.BlockedChannelTabName ?? "Kênh block"); SheetTabs.Add(blocked); SelectedBlockedChannelTab = blocked; } }
         loading = false;
         if (App.SessionDiagnosticOutput is not null) { SettingsChanged(); return; } // Diagnose the actual UI command without resuming or changing saved jobs.
         await Coordinator.InitializeAsync(); await RefreshAsync(); SettingsChanged(); refresh.Start();
@@ -286,7 +306,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         _ = Rules.VideoName(FullName);
         if (SheetSelected && (NicheLoading || !Niches.Contains(FullNiche))) throw new ArgumentException("Chọn một ngách từ danh sách của bảng hiện tại.");
         var job = new VideoJob { Actions = settings.LastActions, Input = FullLink, Name = FullName, Niche = SheetSelected ? FullNiche : "", Title = UploadTitle,
-            Description = UploadDescription, Folder = DownloadSelected ? settings.CurrentFolder : "", Sheet = SheetSelected ? settings.Sheet : null,
+            Description = UploadDescription, Folder = DownloadSelected ? settings.CurrentFolder : "", Sheet = SheetSelected ? settings.Sheet : null, BlockListSheet = settings.Sheet,
             Channel = UploadSelected ? settings.Channel : null, Privacy = settings.Privacy, ShortMaxMilliseconds = settings.ShortMaxMilliseconds };
         Notice = "Đang nhận diện và kiểm tra video trùng…";
         try { await Coordinator.SubmitAsync(job, ct: Ct); }
@@ -354,13 +374,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         Notice = "Chọn đúng một bảng Google Sheets trong trình duyệt. App đang chờ Google tối đa 5 phút.";
         var selection = await new GoogleConnectionService(auth, sheets, youtube).SelectSheetAsync(Ct);
         var video = selection.Tabs.FirstOrDefault(t => settings.Sheet is { } prior && t.Id == prior.SheetId && selection.Id == prior.SpreadsheetId)
-            ?? selection.Tabs.FirstOrDefault(t => t.Name != "Kênh nguồn") ?? selection.Tabs[0];
+            ?? selection.Tabs.FirstOrDefault(t => t.Name is not ("Kênh nguồn" or "Kênh block")) ?? selection.Tabs[0];
         var channel = selection.Tabs.FirstOrDefault(t => settings.Sheet is { } prior && t.Id == prior.SourceChannelSheetId && selection.Id == prior.SpreadsheetId)
             ?? selection.Tabs.FirstOrDefault(t => t.Name == "Kênh nguồn" && t.Id != video.Id);
+        var blocked = selection.Tabs.FirstOrDefault(t => settings.Sheet is { } prior && t.Id == prior.BlockedChannelSheetId && selection.Id == prior.SpreadsheetId)
+            ?? selection.Tabs.FirstOrDefault(t => t.Name == "Kênh block" && t.Id != video.Id && t.Id != channel?.Id);
         var previous = settings.Sheet;
         try { await ApplyConnectionsAsync(new(selection.Id, video.Id, selection.Name, video.Name, selection.CredentialId, channel?.Id, channel?.Name,
             previous?.SpreadsheetId == selection.Id && previous.SheetId == video.Id ? previous.Columns : null,
-            previous?.SpreadsheetId == selection.Id && previous.SourceChannelSheetId == channel?.Id ? previous.SourceChannelColumns : null), settings.Channel, Ct); }
+            previous?.SpreadsheetId == selection.Id && previous.SourceChannelSheetId == channel?.Id ? previous.SourceChannelColumns : null, blocked?.Id, blocked?.Name,
+            previous?.SpreadsheetId == selection.Id && previous.BlockedChannelSheetId == blocked?.Id ? previous.BlockedChannelColumns : null), settings.Channel, Ct); }
         catch { await auth.DisconnectLocalAsync(selection.CredentialId); throw; }
         SetSheetTabs(selection.Tabs); Notice = "Đã đổi bảng. Chọn đúng tab bên dưới; kết nối kênh YouTube được giữ nguyên.";
     }
@@ -431,7 +454,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         SelectedSourceChannelTab = settings.Sheet?.SourceChannelSheetId is int id ? SheetTabs.FirstOrDefault(t => t.Id == id) : SheetTabs.FirstOrDefault(t => t.Name == "Kênh nguồn" && t.Id != settings.Sheet?.SheetId);
         if (settings.Sheet is not null && SelectedSourceChannelTab is { } channel)
             settings.Sheet = settings.Sheet with { SourceChannelSheetId = channel.Id, SourceChannelTabName = channel.Name };
-        SourceTabError = ""; VideoTabError = "";
+        SelectedBlockedChannelTab = settings.Sheet?.BlockedChannelSheetId is int blockedId ? SheetTabs.FirstOrDefault(t => t.Id == blockedId)
+            : SheetTabs.FirstOrDefault(t => t.Name == "Kênh block" && t.Id != settings.Sheet?.SheetId && t.Id != settings.Sheet?.SourceChannelSheetId);
+        if (settings.Sheet is not null && SelectedBlockedChannelTab is { } blocked)
+            settings.Sheet = settings.Sheet with { BlockedChannelSheetId = blocked.Id, BlockedChannelTabName = blocked.Name };
+        SourceTabError = ""; VideoTabError = ""; BlockedTabError = "";
         loading = wasLoading; Notify(nameof(SheetLabel)); PersistSettings();
     }
     private async Task LoadSheetTabsAsync(CancellationToken ct = default, bool refreshNiches = true)
@@ -443,7 +470,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
             var tabs = await sheets.TabsAsync(target, ct);
             if (settings.Sheet != target) return;
             SetSheetTabs(tabs);
-            SheetTabsStatus = SelectedTab is null ? "Tab video đã chọn không còn tồn tại. Chọn lại tab video." : SelectedSourceChannelTab is null ? "Chọn tab kênh nguồn trong cùng file." : $"{tabs.Count} tab trong cùng file. Đích đã lưu của công việc cũ được giữ.";
+            SheetTabsStatus = SelectedTab is null ? "Tab video đã chọn không còn tồn tại. Chọn lại tab video." : SelectedSourceChannelTab is null ? "Chọn tab kênh nguồn trong cùng file." : SelectedBlockedChannelTab is null ? "Chọn tab Kênh block trong cùng file." : $"{tabs.Count} tab trong cùng file. Đích đã lưu của công việc cũ được giữ.";
             if (refreshNiches) await LoadNichesAsync(ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
@@ -459,16 +486,16 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         if (dialog.ShowDialog() != true) return;
         settings.VideoFolder = dialog.FolderName; await SaveSettingsAsync(); Notice = "Đã đổi thư mục cho công việc mới; công việc đã tạo giữ đường dẫn riêng.";
     }
-    private async Task ChooseColumnsAsync(bool channel)
+    private async Task ChooseColumnsAsync(bool channel, bool blocked = false)
     {
         var original = settings.Sheet!;
-        var target = channel ? original with { SheetId = original.SourceChannelSheetId!.Value, TabName = original.SourceChannelTabName ?? "Kênh nguồn", Columns = original.SourceChannelColumns } : original;
-        var dialog = new SheetColumnsWindow(target.TabName, channel, Ct, (row, token) => sheets.ColumnOptionsAsync(target, channel, row, token)) { Owner = Application.Current.MainWindow };
+        var target = blocked ? original with { SheetId = original.BlockedChannelSheetId!.Value, TabName = original.BlockedChannelTabName ?? "Kênh block", Columns = original.BlockedChannelColumns } : channel ? original with { SheetId = original.SourceChannelSheetId!.Value, TabName = original.SourceChannelTabName ?? "Kênh nguồn", Columns = original.SourceChannelColumns } : original;
+        var dialog = new SheetColumnsWindow(target.TabName, channel, Ct, (row, token) => sheets.ColumnOptionsAsync(target, channel, row, token, blocked), blocked) { Owner = Application.Current.MainWindow };
         if (dialog.ShowDialog() != true) return;
         if (settings.Sheet != original) throw new NeedsActionException("Đích bảng đã thay đổi; mở lại lựa chọn cột.");
-        settings.Sheet = channel ? original with { SourceChannelColumns = dialog.Mapping } : original with { Columns = dialog.Mapping };
+        settings.Sheet = blocked ? original with { BlockedChannelColumns = dialog.Mapping } : channel ? original with { SourceChannelColumns = dialog.Mapping } : original with { Columns = dialog.Mapping };
         await SaveSettingsAsync(); Notify(nameof(ColumnMappingLabel));
-        if (!channel) await LoadNichesAsync(Ct);
+        if (!channel && !blocked) await LoadNichesAsync(Ct);
         Notice = "Đã lưu cột cho công việc mới. Đổi tên tiêu đề vẫn dùng được; chèn/xóa/đổi thứ tự cột cần chọn lại.";
     }
     private Task ShowHelpAsync() => ShowFileHelpAsync("GOOGLE-SETUP.md", "Thiết lập Google — Tìm video hay");
@@ -564,16 +591,25 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
     {
         var job = (await store.ListAsync()).Single(x => x.Id == id);
         var previousSheet = job.Sheet; var previousChannel = job.Channel;
+        var previousBlockList = job.BlockListSheet;
         var reconnectActions = job.Issue?.AffectedActions ?? job.Work;
         if (job.DeletionRequested && job.Issue is null) reconnectActions = (job.DeleteSheetRequested ? JobActions.WriteSheet : 0) | (job.DeleteYouTubeRequested ? JobActions.UploadYouTube : 0);
         Notice = "Chọn lại đúng bảng và đúng kênh của công việc. App sẽ kiểm tra ID trước khi thay quyền.";
-        if (reconnectActions.HasFlag(JobActions.WriteSheet) && job.Sheet is not null)
+        if (job.IsCheckingBlockList)
+        {
+            var target = job.BlockListSheet!;
+            var sheet = await sheets.SelectAsync(await auth.ConnectAsync(true, Ct), Ct);
+            if (sheet.Id != target.SpreadsheetId || sheet.Tabs.All(t => t.Id != target.BlockedChannelSheetId))
+            { await auth.DisconnectLocalAsync(sheet.CredentialId); throw new NeedsActionException("Bảng/tab Kênh block khác đích gốc."); }
+            await auth.AdoptVerifiedGrantAsync(target.CredentialId, sheet.CredentialId, Ct);
+        }
+        else if (reconnectActions.HasFlag(JobActions.WriteSheet) && job.Sheet is not null)
         {
             var sheet = await sheets.SelectAsync(await auth.ConnectAsync(true, Ct), Ct);
             if (sheet.Id != job.Sheet.SpreadsheetId || sheet.Tabs.All(t => t.Id != job.Sheet.SheetId)) { await auth.DisconnectLocalAsync(sheet.CredentialId); throw new NeedsActionException("Bảng/tab khác đích gốc."); }
             await auth.AdoptVerifiedGrantAsync(job.Sheet.CredentialId, sheet.CredentialId, Ct);
         }
-        if (reconnectActions.HasFlag(JobActions.UploadYouTube) && job.Channel is not null)
+        if (!job.IsCheckingBlockList && reconnectActions.HasFlag(JobActions.UploadYouTube) && job.Channel is not null)
         {
             var requireDeletion = job.DeletionRequested && job.DeleteYouTubeRequested && !job.YouTubeDeleted
                 || (await store.ListAsync()).Any(x => !x.RemovedFromHistory && x.State == JobState.NeedsAuth
@@ -588,7 +624,7 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
         {
             var old = (await store.ListAsync()).Single(x => x.Id == id);
             // Preserve the previous credential identity for dependent jobs.
-            old.Sheet = previousSheet; old.Channel = previousChannel;
+            old.Sheet = previousSheet; old.Channel = previousChannel; old.BlockListSheet = previousBlockList;
             await Coordinator.ReconnectDependentJobsAsync(old, job);
         }
         else await Coordinator.ResumeAsync(id);
@@ -689,11 +725,11 @@ public sealed partial class MainViewModel : INotifyPropertyChanged
     internal void SetTabsForSmoke(bool enabled)
     {
         loading = true;
-        settings.Sheet = enabled ? new("mock-sheet", 7, "Hai tab minh họa", "Video", "mock", 8, "Kênh nguồn") : null;
-        SetSheetTabs(enabled ? [new(7, "Video"), new(8, "Kênh nguồn")] : []);
+        settings.Sheet = enabled ? new("mock-sheet", 7, "Ba tab minh họa", "Video", "mock", 8, "Kênh nguồn", BlockedChannelSheetId: 9, BlockedChannelTabName: "Kênh block") : null;
+        SetSheetTabs(enabled ? [new(7, "Video"), new(8, "Kênh nguồn"), new(9, "Kênh block")] : []);
         loading = false;
-        if (enabled && (SelectedTab?.Id != 7 || SelectedSourceChannelTab?.Id != 8)) throw new InvalidOperationException("Two tab selectors not restored.");
-        SheetTabsStatus = enabled ? "Hai tab minh họa; chưa đọc hoặc ghi Google thật." : "";
+        if (enabled && (SelectedTab?.Id != 7 || SelectedSourceChannelTab?.Id != 8 || SelectedBlockedChannelTab?.Id != 9)) throw new InvalidOperationException("Three tab selectors not restored.");
+        SheetTabsStatus = enabled ? "Ba tab minh họa; chưa đọc hoặc ghi Google thật." : "";
     }
     internal async Task<object> CheckUnifiedHistoryAsync()
     {

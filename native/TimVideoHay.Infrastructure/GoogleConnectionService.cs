@@ -16,6 +16,10 @@ public sealed class GoogleConnectionService(GoogleAuth auth, GoogleSheets sheets
         try { return await youtube.ChannelAsync(result.CredentialId, ct); }
         catch { await auth.DisconnectLocalAsync(result.CredentialId); throw; }
     }
-    public Task CheckSheetAsync(SheetTarget target, CancellationToken ct) => sheets.PreflightAsync(target, ct);
+    public async Task CheckSheetAsync(SheetTarget target, CancellationToken ct)
+    {
+        await sheets.PreflightAsync(target, ct);
+        await sheets.PreflightBlockedAsync(target, ct);
+    }
     public Task ForgetAsync(string credential, CancellationToken ct) => auth.DisconnectLocalAsync(credential, ct);
 }
