@@ -1,6 +1,6 @@
 # Kế hoạch: tab Kênh block
 
-Trạng thái: đã duyệt ngày 16/11/2026, đang triển khai. Đọc `AGENTS.md` và `docs/HANDOFF.md` trước khi sửa.
+Trạng thái: đã triển khai ngày 16/11/2026 (Issue #18); test fixture và smoke đạt, chưa nghiệm thu trên bảng Google thật. Đọc `AGENTS.md` và `docs/HANDOFF.md` trước khi sửa.
 
 ## Mục tiêu
 

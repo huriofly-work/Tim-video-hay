@@ -1,5 +1,9 @@
 ﻿# Đặc tả triển khai 0.3.39
 
+## Kênh block — chưa phát hành
+
+Sau nhận diện Douyin và trước kiểm tra thư mục trùng tên, công việc có bảng kết nối chạy bước **Kiểm tra kênh block**, kể cả chỉ Tải. Nhánh xóa kết quả và chỉ xác minh YouTube đã đăng bỏ qua bước này. Đích tab block được chụp riêng lúc tạo công việc; sec_uid tác giả được lưu checkpoint từ kênh nguồn đã có hoặc luồng metadata hiện tại. Mỗi lượt chạy đọc mới tab, so chính xác sec_uid trong Link kênh; không ghi vào tab block. Link sai báo số dòng, dòng trống bỏ qua. Kênh bị block sinh lỗi BlockedChannel, giữ kết quả và checkpoint, chờ người dùng bỏ block rồi Tiếp tục hoặc xóa công việc; không tự thử lại. Chưa có bảng thì ghi chú chưa kiểm tra, đã có bảng nhưng thiếu tab block thì dừng với lỗi cấu hình. Wizard bắt buộc chọn ba tab khác nhau và gợi ý tab tên đúng Kênh block; payload cũ thiếu trường mới vẫn đọc được.
+
 ## Điều phối thao tác từ 0.3.39
 
 - Giữ một tác vụ tải/đăng media tại một thời điểm; tối đa bốn tác vụ nền chỉ ghi bảng, xóa Google hoặc xác nhận YouTube. Thời gian chờ thử lại không chiếm lượt chạy. Bộ lập lịch đánh thức lượt xác nhận đến hạn cả khi media khác đang truyền.

@@ -102,6 +102,14 @@ Tab cần một hàng tiêu đề trong 30 dòng đầu. Trong app bấm **Chọ
 
 Nếu có dropdown Ngách, thêm ngách bạn sẽ nhập. Loại video cần nhãn Short/Shorts/Video ngắn và Long/Video dài. Mốc mặc định ≤300 giây là Short, >300 giây là Long; đổi ở Kết nối & cài đặt → Phân loại nội dung; mốc mới áp dụng cho công việc mới và cả phân loại kênh; đây là nhãn của bảng, không ép YouTube Shorts. Trong cùng file cần tab **Kênh nguồn** với năm cột **Link kênh, Tên kênh, Đăng ký, Ngách, Dạng nội dung**; Dạng nội dung chấp nhận **Short, Long, All**. Vùng ghi không được có công thức/ô gộp/bảo vệ cản ghi. App cập nhật cùng dòng kênh theo sec_uid; xóa dòng video giữ kênh. Không sửa/sắp xếp tab trong lúc app ghi.
 
+### Tạo tab Kênh block
+
+Trong cùng file, tạo tab tên **Kênh block**, thêm tiêu đề **Link kênh** trong 30 dòng đầu. Mỗi dòng dưới tiêu đề chứa một link `https://www.douyin.com/user/<sec_uid>`; chấp nhận cả `https://douyin.com/user/<sec_uid>`. Có thể thêm cột Ghi chú hoặc cột khác. Không có kênh cần chặn thì chỉ giữ hàng tiêu đề. App bỏ qua ô Link kênh trống; ô có nội dung nhưng sai link sẽ làm công việc dừng và báo số dòng để sửa.
+
+Tab block bắt buộc và phải khác tab video, Kênh nguồn. Wizard tự gợi ý tab tên đúng **Kênh block**; nếu dùng tiêu đề khác, bấm **Chọn cột Kênh block** và gán một cột Link kênh. App chỉ đọc tab này, không ghi hay xóa dòng. Giữ tab trong giới hạn 20.000 dòng/200 cột.
+
+Mọi công việc có bảng kết nối đều kiểm tra block trước tải/ghi/đăng, kể cả chỉ Tải hoặc Tải + YouTube. Danh sách được đọc mới mỗi lần Tiếp tục; kênh vừa thêm có hiệu lực với công việc còn dở. Nếu bị chặn, bỏ kênh khỏi danh sách rồi bấm **Tiếp tục**, hoặc xóa công việc khỏi lịch sử. Các phần đã hoàn tất được giữ nguyên. Đích tab được lưu trong công việc lúc tạo nên đổi bảng mặc định không đổi danh sách áp dụng cho công việc cũ. Nếu chưa kết nối bảng, công việc ghi chú rằng chưa kiểm tra Kênh block. Hồ sơ cũ đã kết nối cần chọn tab block trong **Kết nối & cài đặt** trước khi tạo công việc mới; thiếu lựa chọn sẽ dừng với lỗi cấu hình.
+
 ### Chọn bảng → chọn kênh → xác nhận
 
 1. Kết nối & cài đặt → **Kết nối Google**.
@@ -110,7 +118,7 @@ Nếu có dropdown Ngách, thêm ngách bạn sẽ nhập. Loại video cần nh
 
 3. Đọc quyền Google và cấp quyền nếu đúng app của bạn. Trong Picker, chọn đúng một bảng.
 
-4. Quay về app, kiểm tra tên bảng, chọn **Tab video** và **Tab kênh nguồn** khác nhau trong cùng file. Dùng **Chọn cột video / Chọn cột kênh nguồn** nếu tiêu đề khác tên mặc định → **Tiếp tục**. App kiểm tra bốn cột video trước khi sang bước kênh; năm cột kênh được kiểm tra trước công việc ghi bảng.
+4. Quay về app, kiểm tra tên bảng, chọn **Tab video**, **Tab kênh nguồn** và **Tab Kênh block** là ba tab khác nhau trong cùng file. Dùng các nút **Chọn cột** tương ứng nếu tiêu đề khác tên mặc định → **Tiếp tục**. Thiếu tab block thì chưa thể sang bước kênh. App kiểm tra bốn cột video và cột Link kênh của tab block; năm cột kênh nguồn được kiểm tra trước công việc ghi bảng.
 
 5. Bấm **Chọn / đổi kênh YouTube**, chọn email/kênh thương hiệu muốn đăng. Có thể khác email của bảng. Cấp các quyền đọc kênh và upload mà app yêu cầu.
 
