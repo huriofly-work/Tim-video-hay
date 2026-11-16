@@ -28,12 +28,12 @@ public sealed class GoogleSheets(GoogleTransport api, ISourceChannelReader? chan
         return metadata["sheets"]!.AsArray().Where(x => x?["properties"]?["sheetType"]?.ToString() == "GRID")
             .Select(x => new SheetTab(x!["properties"]!["sheetId"]!.GetValue<int>(), x["properties"]!["title"]!.ToString())).ToArray();
     }
-    public async Task<SheetColumnSelection> ColumnOptionsAsync(SheetTarget target, bool channel, int? headerRow, CancellationToken ct)
+    public async Task<SheetColumnSelection> ColumnOptionsAsync(SheetTarget target, bool channel, int? headerRow, CancellationToken ct, bool blocked = false)
     {
         var grid = await GridAsync(target, ct, resolveDropdowns: false, rowLimit: 30);
         SheetColumnMapping? suggested = target.Columns;
         if (suggested is null)
-            try { var layout = SheetLayout.Parse(grid, channel ? Rules.ChannelHeaders : null); suggested = new(layout.HeaderRow, layout.Columns); }
+            try { var layout = SheetLayout.Parse(grid, blocked ? Rules.BlockedChannelHeaders : channel ? Rules.ChannelHeaders : null); suggested = new(layout.HeaderRow, layout.Columns); }
             catch (NeedsActionException) { /* Custom headings are selected manually. */ }
         var row = headerRow ?? suggested?.HeaderRow ?? 0;
         if (row is < 0 or >= 30) throw new NeedsActionException("Hàng tiêu đề phải nằm trong 30 hàng đầu.");
@@ -86,6 +86,33 @@ public sealed class GoogleSheets(GoogleTransport api, ISourceChannelReader? chan
     }
     public async Task<IReadOnlyList<string>> NichesAsync(SheetTarget target, CancellationToken ct)
         => SheetLayout.Parse(await GridAsync(target, ct), mapping: target.Columns).NicheOptions();
+    public async Task CheckBlockedChannelAsync(VideoJob job, CancellationToken ct)
+    {
+        var selected = job.BlockListSheet ?? throw new NeedsActionException("Chọn tab Kênh block trong Kết nối & cài đặt", JobIssueKind.Configuration);
+        var secUid = !string.IsNullOrWhiteSpace(job.SourceChannel?.SecUid) ? job.SourceChannel.SecUid : job.SourceAuthorSecUid ?? "";
+        if (!DouyinChannelReader.ValidSecUid(secUid))
+            throw new NeedsActionException("Không lấy được kênh của đúng video Douyin.", JobIssueKind.SourceUnavailable);
+        var target = BlockedTarget(selected);
+        SheetLayout layout;
+        try { layout = SheetLayout.Parse(await GridAsync(target, ct, resolveDropdowns: false), Rules.BlockedChannelHeaders, target.Columns); }
+        catch (NeedsActionException ex) when (ex is not RetryLaterException)
+        { throw new NeedsActionException("Tab Kênh block: " + ex.Message, JobIssueKind.Configuration); }
+        var row = layout.FindBlockedChannel(secUid);
+        if (row is not null)
+            throw new NeedsActionException($"Video thuộc kênh bị block (dòng {row.Value + 1} trong tab Kênh block). App không tải, ghi bảng hay đăng video này.", JobIssueKind.BlockedChannel);
+    }
+    private static SheetTarget BlockedTarget(SheetTarget target)
+    {
+        if (target.BlockedChannelSheetId is not int id || id == target.SheetId || id == target.SourceChannelSheetId)
+            throw new NeedsActionException("Chọn tab Kênh block trong Kết nối & cài đặt", JobIssueKind.Configuration);
+        return target with { SheetId = id, TabName = target.BlockedChannelTabName ?? "Kênh block", Columns = target.BlockedChannelColumns };
+    }
+    public async Task PreflightBlockedAsync(SheetTarget target, CancellationToken ct)
+    {
+        var block = BlockedTarget(target);
+        var layout = SheetLayout.Parse(await GridAsync(block, ct, resolveDropdowns: false), Rules.BlockedChannelHeaders, block.Columns);
+        _ = layout.FindBlockedChannel("");
+    }
     public async Task CheckDuplicateAsync(VideoJob job, CancellationToken ct)
     {
         var layout = SheetLayout.Parse(await GridAsync(job.Sheet!, ct, resolveDropdowns: false), mapping: job.Sheet!.Columns);
@@ -301,7 +328,25 @@ public sealed class SheetLayout
     private JsonNode? Cell(int row, int col) { var cells = Cells(row); return col < cells.Count ? cells[col] : null; }
     private static string CellText(JsonNode? cell) => cell?["effectiveValue"]?["stringValue"]?.GetValue<string>() ?? cell?["userEnteredValue"]?["stringValue"]?.GetValue<string>()
         ?? cell?["effectiveValue"]?["numberValue"]?.ToString() ?? cell?["userEnteredValue"]?["numberValue"]?.ToString() ?? "";
+    // Block-list cells must not hide bool, error or formula content as empty: a broken link would silently unblock a channel.
+    private static string BlockCellText(JsonNode? cell) => CellText(cell) is { Length: > 0 } text ? text
+        : cell?["effectiveValue"]?["boolValue"]?.ToString() ?? cell?["userEnteredValue"]?["boolValue"]?.ToString()
+        ?? cell?["effectiveValue"]?["errorValue"]?.ToJsonString() ?? cell?["userEnteredValue"]?["formulaValue"]?.ToString() ?? "";
     public string[] Values(int row) => Columns.Select(c => CellText(Cell(row, c))).ToArray();
+    public int? FindBlockedChannel(string secUid)
+    {
+        for (var row = HeaderRow + 1; row < rows.Count; row++)
+        {
+            var text = BlockCellText(Cell(row, Columns[0]));
+            if (string.IsNullOrWhiteSpace(text)) continue;
+            if (!Uri.TryCreate(text, UriKind.Absolute, out var uri) || uri.Scheme != "https" || uri.Host is not ("www.douyin.com" or "douyin.com")
+                || uri.UserInfo.Length != 0 || !uri.IsDefaultPort || !uri.AbsolutePath.StartsWith("/user/", StringComparison.Ordinal)
+                || !DouyinChannelReader.ValidSecUid(uri.AbsolutePath[6..].TrimEnd('/')))
+                throw new NeedsActionException($"Link kênh không hợp lệ ở dòng {row + 1} trong tab Kênh block. Sửa link kênh Douyin rồi Tiếp tục.", JobIssueKind.InvalidData);
+        }
+        var matches = FindChannel(secUid);
+        return matches.Count == 0 ? null : matches[0];
+    }
     public List<int> FindChannel(string secUid) => Enumerable.Range(HeaderRow + 1, Math.Max(0, rows.Count - HeaderRow - 1))
         .Where(row => Uri.TryCreate(CellText(Cell(row, Columns[0])), UriKind.Absolute, out var uri) && uri.Scheme == "https" && uri.Host is "www.douyin.com" or "douyin.com"
             && uri.AbsolutePath.TrimEnd('/') == "/user/" + secUid && uri.UserInfo.Length == 0 && uri.IsDefaultPort).ToList();

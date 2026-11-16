@@ -108,6 +108,8 @@ public sealed partial class JobCoordinator(IJobStore store, IVideoSource source,
                     && old.RemovedFromHistory && old.Results == JobActions.None && !old.UnknownResult) continue;
                 throw new DuplicateJobException(old);
             }
+            job.BlockListSheet ??= job.Sheet ?? (await store.SettingsAsync(ct)).Sheet;
+            job.BlockListSnapshotCaptured = true;
             job.Actions = job.SelectedActions; job.PendingActions = job.Actions;
             job.EnqueuedAt = DateTimeOffset.UtcNow;
             job.DownloadAttemptId = job.Actions.Value.HasFlag(JobActions.Download) ? Guid.NewGuid().ToString("N") : null;
@@ -455,6 +457,32 @@ public sealed partial class JobCoordinator(IJobStore store, IVideoSource source,
                 {
                     await Stage(job, "Nhận diện Douyin"); job.Source = await source.ResolveAsync(job.Input, ct); await Save(job);
                 }
+                await Stage(job, "Kiểm tra kênh block");
+                if (!job.BlockListSnapshotCaptured)
+                {
+                    job.BlockListSheet ??= job.Sheet ?? (await store.SettingsAsync(ct)).Sheet;
+                    job.BlockListSnapshotCaptured = true;
+                    await Save(job);
+                }
+                var blockTarget = job.BlockListSheet ?? job.Sheet;
+                if (blockTarget is null)
+                    job.BlockListMessage = "Chưa kết nối bảng nên chưa kiểm tra Kênh block";
+                else
+                {
+                    job.BlockListSheet ??= blockTarget;
+                    job.BlockListMessage = "";
+                    if (blockTarget.BlockedChannelSheetId is null || blockTarget.BlockedChannelSheetId == blockTarget.SheetId
+                        || blockTarget.BlockedChannelSheetId == blockTarget.SourceChannelSheetId)
+                        throw new NeedsActionException("Chọn tab Kênh block trong Kết nối & cài đặt", JobIssueKind.Configuration);
+                    if (!string.IsNullOrWhiteSpace(job.SourceChannel?.SecUid)) job.SourceAuthorSecUid = job.SourceChannel.SecUid;
+                    else if (string.IsNullOrWhiteSpace(job.SourceAuthorSecUid))
+                        job.SourceAuthorSecUid = await WithSourceAsync(() => source.ReadAuthorSecUidAsync(job.Source, ct), ct);
+                    if (string.IsNullOrWhiteSpace(job.SourceAuthorSecUid))
+                        throw new NeedsActionException("Không lấy được kênh của đúng video Douyin.", JobIssueKind.SourceUnavailable);
+                    await Save(job);
+                    await sheets.CheckBlockedChannelAsync(job, ct);
+                }
+                await Save(job);
                 // Check every selected destination before any download or remote mutation.
                 if (job.Work.HasFlag(JobActions.Download)) { await Stage(job, "Kiểm tra thư mục trùng tên", JobActions.Download); await source.CheckDuplicateAsync(job, ct); }
                 if (job.Work.HasFlag(JobActions.WriteSheet)) { await Stage(job, "Kiểm tra video trùng trong bảng", JobActions.WriteSheet); await sheets.CheckDuplicateAsync(job, ct); await sheets.PreflightAsync(job.Sheet!, ct); }
@@ -503,7 +531,7 @@ public sealed partial class JobCoordinator(IJobStore store, IVideoSource source,
             job.State = JobState.Complete; job.Issue = null; job.NextRetryAt = null; job.AutomaticRetryAttempts = 0;
             job.NextYouTubeCheckAt = null;
             job.Stage = "Hoàn tất";
-            job.Message = "Đã hoàn tất các phần đã chọn. " + job.ResultsLabel + " " + job.SourceChannelMessage + (job.OmittedActions == JobActions.None ? "" : " Đã bỏ phần chưa hoàn tất: " + VideoJob.ActionLabel(job.OmittedActions) + ".");
+            job.Message = "Đã hoàn tất các phần đã chọn. " + job.ResultsLabel + " " + job.SourceChannelMessage + " " + job.BlockListMessage + (job.OmittedActions == JobActions.None ? "" : " Đã bỏ phần chưa hoàn tất: " + VideoJob.ActionLabel(job.OmittedActions) + ".");
             if (job.DeletionRequested)
             {
                 job.DeletionRequested = false; job.DeleteSheetRequested = false; job.DeleteYouTubeRequested = false; job.DeleteFolderRequested = false;
@@ -527,6 +555,8 @@ public sealed partial class JobCoordinator(IJobStore store, IVideoSource source,
         catch (NeedsAuthException ex) { SetIssue(job, ex, ex.Message); }
         catch (NeedsActionException ex) { SetIssue(job, ex, ex.Message); }
         catch (Exception ex) { SetIssue(job, ex, SafeError(ex)); }
+        if (job.BlockListMessage.Length > 0 && !job.Message.Contains(job.BlockListMessage, StringComparison.Ordinal))
+            job.Message += " " + job.BlockListMessage;
         await Save(job);
     }
     private static bool CanVerifyExisting(VideoJob job) => !job.DeletionRequested && job.Work.HasFlag(JobActions.UploadYouTube) && !job.YouTubeDeleted && !job.YouTubeVerified && job.YouTubeId is not null && job.Channel is not null;

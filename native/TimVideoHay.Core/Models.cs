@@ -36,7 +36,8 @@ public sealed record SheetColumnOption(int Index, string Letter, string Header)
 }
 public sealed record SheetColumnSelection(int HeaderRow, IReadOnlyList<SheetColumnOption> Options, SheetColumnMapping? Suggested);
 public sealed record SheetTarget(string SpreadsheetId, int SheetId, string SpreadsheetName, string TabName, string CredentialId,
-    int? SourceChannelSheetId = null, string? SourceChannelTabName = null, SheetColumnMapping? Columns = null, SheetColumnMapping? SourceChannelColumns = null);
+    int? SourceChannelSheetId = null, string? SourceChannelTabName = null, SheetColumnMapping? Columns = null, SheetColumnMapping? SourceChannelColumns = null,
+    int? BlockedChannelSheetId = null, string? BlockedChannelTabName = null, SheetColumnMapping? BlockedChannelColumns = null);
 public sealed record ChannelTarget(string ChannelId, string Name, string CredentialId);
 public sealed record LocalFileIdentity(string Volume, ulong Serial, ulong Low, ulong High, ulong Created);
 public sealed record SourceVideo(string Id, string CanonicalUrl);
@@ -104,7 +105,8 @@ public sealed class VideoJob
     public bool CanResume => !RemovedFromHistory && State is JobState.Paused or JobState.NeedsAuth or JobState.NeedsAction or JobState.Failed;
     public bool CanTogglePause => CanPause || CanResume;
     public string PauseResumeLabel => CanPause ? "Tạm dừng" : "Tiếp tục";
-    public bool NeedsGoogleReconnect => State == JobState.NeedsAuth && ((Work & (JobActions.WriteSheet | JobActions.UploadYouTube)) != 0 || DeletionRequested && (DeleteSheetRequested || DeleteYouTubeRequested));
+    [System.Text.Json.Serialization.JsonIgnore] public bool IsCheckingBlockList => Stage == "Kiểm tra kênh block" && BlockListSheet is not null;
+    public bool NeedsGoogleReconnect => State == JobState.NeedsAuth && (IsCheckingBlockList || (Work & (JobActions.WriteSheet | JobActions.UploadYouTube)) != 0 || DeletionRequested && (DeleteSheetRequested || DeleteYouTubeRequested));
     public bool NeedsReconciliation => State == JobState.NeedsAction && (UnknownResult || SheetWriteStarted || MediaSendStarted);
     public string AttemptId { get; set; } = Guid.NewGuid().ToString("N");
     public string? DownloadAttemptId { get; set; }
@@ -113,6 +115,10 @@ public sealed class VideoJob
     public List<ActionReceipt> Receipts { get; set; } = [];
     public SourceMetadata? Metadata { get; set; }
     public SourceChannelMetadata? SourceChannel { get; set; }
+    public string? SourceAuthorSecUid { get; set; }
+    public SheetTarget? BlockListSheet { get; set; }
+    public bool BlockListSnapshotCaptured { get; set; }
+    public string BlockListMessage { get; set; } = "";
     public bool IncludeSourceChannel { get; set; } = true;
     public SheetTarget? SourceChannelSheet { get; set; }
     public bool SourceChannelUpdated { get; set; }
@@ -226,6 +232,7 @@ public static partial class Rules
         return Text(value, "Tên video", 100);
     }
     public static readonly string[] Headers = ["Link video mẫu", "Tên video", "Ngách", "Loại video"];
+    public static readonly string[] BlockedChannelHeaders = ["Link kênh"];
     public static readonly string[] ChannelHeaders = ["Link kênh", "Tên kênh", "Đăng ký", "Ngách", "Dạng nội dung"];
     public static bool SameTitle(string left, string right) => string.Equals(left.Normalize().Trim(), right.Normalize().Trim(), StringComparison.OrdinalIgnoreCase);
     public static string VideoType(double seconds) => double.IsFinite(seconds) && seconds > 0

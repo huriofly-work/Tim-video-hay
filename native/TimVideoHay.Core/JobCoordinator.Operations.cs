@@ -27,7 +27,8 @@ public sealed partial class JobCoordinator
                 : x.Kind == "inspect" ? ((x.Job.SheetVerified || x.Job.UnknownSheet) && !x.Job.SheetDeleted ? JobActions.WriteSheet : 0) | ((x.Job.YouTubeId is not null || x.Job.UnknownUpload) && !x.Job.YouTubeDeleted ? JobActions.UploadYouTube : 0)
                 : x.Job.DeletionRequested ? (x.Job.DeleteSheetRequested && !x.Job.SheetDeleted ? JobActions.WriteSheet : 0) | (x.Job.DeleteYouTubeRequested && !x.Job.YouTubeDeleted ? JobActions.UploadYouTube : 0)
                 : x.Job.Work;
-            return actions.HasFlag(JobActions.WriteSheet) && x.Job.Sheet?.CredentialId == credential
+            return x.Kind is ("work" or "sheet") && x.Job.BlockListSheet?.CredentialId == credential
+                || actions.HasFlag(JobActions.WriteSheet) && x.Job.Sheet?.CredentialId == credential
                 || actions.HasFlag(JobActions.UploadYouTube) && x.Job.Channel?.CredentialId == credential;
         });
     }

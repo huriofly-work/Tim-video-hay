@@ -36,6 +36,8 @@ public sealed class DouyinSource(string toolsDirectory, string privateTemp, ISec
             return new(source.Id, ms, info["metadata_source"]?.ToString() ?? "Douyin", DateTimeOffset.UtcNow);
         throw new NeedsActionException("Không lấy được thời lượng Douyin của đúng video. Bấm Tiếp tục để thử lại; app chưa ghi bảng.");
     }
+    public Task<string> ReadAuthorSecUidAsync(SourceVideo source, CancellationToken ct)
+        => browser.ReadAuthorSecUidAsync(source, ct);
     public Task ValidateFolderDeletionAsync(VideoJob job, CancellationToken ct)
     {
         ct.ThrowIfCancellationRequested(); _ = OwnedDownloadDirectory.Validate(job, OutputState); return Task.CompletedTask;

@@ -59,7 +59,7 @@ static async Task Throws<T>(Func<Task> action) where T : Exception { try { await
 static Task Sync(Action action) { action(); return Task.CompletedTask; }
 var media = Path.Combine(runRoot, "sample.mp4"); await File.WriteAllBytesAsync(media, Enumerable.Range(0, 100).Select(x => (byte)x).ToArray());
 VideoJob Job(JobMode mode = JobMode.Full) => new() { Mode = mode, Input = "https://www.douyin.com/video/7659702794928147739", Name = "Tên thử: khoa học?", Niche = "Vũ trụ", Folder = runRoot,
-    Sheet = new("sheet-id", 7, "Bảng", "Công việc", "sheets-test"), Channel = new("channel-id", "Kênh", "youtube-test"), Source = new("7659702794928147739", "https://www.douyin.com/video/7659702794928147739"),
+    Sheet = new("sheet-id", 7, "Bảng", "Công việc", "sheets-test", BlockedChannelSheetId: 9, BlockedChannelTabName: "Kênh block"), Channel = new("channel-id", "Kênh", "youtube-test"), Source = new("7659702794928147739", "https://www.douyin.com/video/7659702794928147739"),
     Metadata = new("7659702794928147739", 240000, "fixture", DateTimeOffset.UtcNow), Media = new(media, 240, 100, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(awaitFile())), "video/mp4"), Title = "Tên thử", Privacy = "private" };
 byte[] awaitFile() => File.ReadAllBytes(media);
 await Test("5 phút là Short, phần thập phân trên 5 phút là Long", () => Sync(() => { Assert(Rules.VideoType(240.001) == "Short"); Assert(Rules.VideoType(300) == "Short"); Assert(Rules.VideoType(300.001) == "Long"); }));
@@ -1752,7 +1752,7 @@ await Test("Danh sách hai tab và chọn kênh theo ID sau đổi tên tab", as
 });
 await Test("Wizard lưu hai tab riêng, chặn chọn cùng tab trước lưu", async () => {
     var service = new SetupService();
-    service.Selection = new("new-sheet", "Bảng thử", [new(8, "Kênh nguồn"), new(7, "Video")], "new-credential");
+    service.Selection = new("new-sheet", "Bảng thử", [new(8, "Kênh nguồn"), new(7, "Video"), new(9, "Kênh block")], "new-credential");
     var draft = new GoogleConnectionDraft(service, (_, _, _) => Task.CompletedTask);
     await draft.SelectSheetAsync(default);
     Assert(draft.Sheet?.SheetId == 7 && draft.Sheet.SourceChannelSheetId == 8);
@@ -3095,6 +3095,230 @@ await Test("Thao tác độc lập: đối soát upload chưa có ID vẫn giữ
         var saved=(await db.ListAsync()).Single();Assert(saved.State==JobState.Paused && saved.UnknownUpload && !c.UsesCredential(job.Channel.CredentialId));
     }finally{await c.StopAsync();}
 });
+await Test("Kênh block: chặn trước tải, ghi bảng và upload, không tự thử lại", async () => {
+    var db = new FixtureJobStore(); var f = new Fakes { BlockChannel = true }; var c = new JobCoordinator(db, f, f, f);
+    var job = Job(); job.Media = null;
+    try {
+        await c.SubmitAsync(job); await Finish(db, job.Id);
+        var saved = (await db.ListAsync()).Single();
+        Assert(saved.State == JobState.NeedsAction && saved.Issue?.Kind == JobIssueKind.BlockedChannel);
+        Assert(saved.Stage == "Kiểm tra kênh block" && saved.Message.Contains("dòng 3"));
+        Assert(f.Downloads == 0 && f.Writes == 0 && f.Uploads == 0 && saved.AutomaticRetryAttempts == 0 && saved.NextRetryAt is null);
+        Assert(JobAttention.From(saved)!.Choices.Any(x => x.Label == "Đã bỏ block, kiểm tra lại"));
+    } finally { await c.StopAsync(); }
+});
+await Test("Kênh block: kênh được phép tiếp tục như cũ", async () => {
+    var db = new FixtureJobStore(); var f = new Fakes(); var c = new JobCoordinator(db, f, f, f); var job = Job();
+    try { await c.SubmitAsync(job); await Finish(db, job.Id); Assert((await db.ListAsync()).Single().State == JobState.Complete && f.BlockChecks == 1 && f.Writes == 1 && f.Uploads == 1); }
+    finally { await c.StopAsync(); }
+});
+await Test("Kênh block: chỉ Tải vẫn chụp đích bảng và kiểm tra", async () => {
+    var db = new FixtureJobStore(); var target = Job().Sheet!;
+    await db.SaveSettingsAsync(new() { Sheet = target }); var f = new Fakes { BlockChannel = true }; var c = new JobCoordinator(db, f, f, f);
+    var job = Job(JobMode.DownloadOnly); job.Sheet = null; job.Channel = null; job.Media = null;
+    try {
+        await c.SubmitAsync(job); await Finish(db, job.Id);
+        await db.SaveSettingsAsync(new() { Sheet = target with { SpreadsheetId = "different-file" } });
+        var saved = (await db.ListAsync()).Single();
+        Assert(saved.Sheet is null && saved.BlockListSheet == target && saved.Issue?.Kind == JobIssueKind.BlockedChannel && f.BlockChecks == 1 && f.Downloads == 0);
+    } finally { await c.StopAsync(); }
+});
+await Test("Kênh block: chạy tiếp đọc mới, giữ phần đã xong và checkpoint tác giả", async () => {
+    var db = new FixtureJobStore(); var f = new Fakes { FailSheet = true }; var c = new JobCoordinator(db, f, f, f); var job = Job();
+    try {
+        await c.SubmitAsync(job); await Finish(db, job.Id); var before = (await db.ListAsync()).Single();
+        Assert(before.Work == (JobActions.WriteSheet | JobActions.UploadYouTube) && before.SourceAuthorSecUid is not null);
+        f.BlockChannel = true; f.FailSheet = false; await c.ResumeAsync(job.Id); await Finish(db, job.Id);
+        var saved = (await db.ListAsync()).Single();
+        Assert(saved.Issue?.Kind == JobIssueKind.BlockedChannel && saved.Media == before.Media && saved.Work == before.Work);
+        Assert(f.BlockChecks == 2 && f.AuthorReads == 1 && f.Writes == 1 && f.Uploads == 0);
+        f.BlockChannel = false; await c.ResumeAsync(job.Id); await Finish(db, job.Id);
+        Assert((await db.ListAsync()).Single().State == JobState.Complete && f.BlockChecks == 3 && f.AuthorReads == 1);
+    } finally { await c.StopAsync(); }
+});
+await Test("Kênh block: chưa kết nối bảng bỏ qua kèm thông báo", async () => {
+    var db = new FixtureJobStore(); var f = new Fakes(); var c = new JobCoordinator(db, f, f, f); var job = Job(JobMode.DownloadOnly); job.Sheet = null;
+    try { await c.SubmitAsync(job); await Finish(db, job.Id); var saved = (await db.ListAsync()).Single();
+        Assert(saved.State == JobState.Complete && saved.Message.Contains("Chưa kết nối bảng nên chưa kiểm tra Kênh block") && f.AuthorReads == 0 && f.BlockChecks == 0);
+    } finally { await c.StopAsync(); }
+});
+await Test("Kênh block: hồ sơ đã kết nối thiếu tab dừng với Configuration", async () => {
+    var db = new FixtureJobStore(); var f = new Fakes(); var c = new JobCoordinator(db, f, f, f); var job = Job();
+    job.Sheet = job.Sheet! with { BlockedChannelSheetId = null }; job.Media = null;
+    try { await c.SubmitAsync(job); await Finish(db, job.Id); var saved = (await db.ListAsync()).Single();
+        Assert(saved.Issue?.Kind == JobIssueKind.Configuration && saved.Message.Contains("Chọn tab Kênh block") && f.Downloads == 0 && f.Writes == 0 && f.Uploads == 0);
+    } finally { await c.StopAsync(); }
+});
+await Test("Kênh block: payload cũ thiếu trường mới vẫn đọc được", () => Sync(() => {
+    var settings = JsonSerializer.Deserialize<AppSettings>("""{"Sheet":{"SpreadsheetId":"fixture","SheetId":7,"SpreadsheetName":"Bảng","TabName":"Video","CredentialId":"fixture-key"}}""")!;
+    var job = JsonSerializer.Deserialize<VideoJob>("""{"Name":"Cũ","Actions":1}""")!;
+    Assert(settings.Sheet!.BlockedChannelSheetId is null && settings.Sheet.BlockedChannelColumns is null && settings.Sheet.BlockedChannelTabName is null);
+    Assert(job.BlockListSheet is null && job.SourceAuthorSecUid is null && job.BlockListMessage == "");
+}));
+await Test("Kênh block: ưu tiên kênh nguồn đã có, bỏ qua nhánh xác minh YouTube", async () => {
+    var db = new FixtureJobStore(); var f = new Fakes { BlockChannel = true }; var c = new JobCoordinator(db, f, f, f); var job = Job(); job.SourceChannel = ChannelFixture();
+    try {
+        await c.SubmitAsync(job); await Finish(db, job.Id); Assert(f.AuthorReads == 0 && (await db.ListAsync()).Single().SourceAuthorSecUid == channelSec);
+        var saved = (await db.ListAsync()).Single(); saved.YouTubeId = "existing"; saved.PendingActions = JobActions.UploadYouTube; saved.State = JobState.Paused; await db.SaveAsync(saved);
+        await c.ResumeAsync(saved.Id); await Finish(db, saved.Id); Assert((await db.ListAsync()).Single().State == JobState.Complete && f.BlockChecks == 1 && f.Uploads == 0);
+    } finally { await c.StopAsync(); }
+});
+JsonNode BlockGrid(params string[] links) => new JsonObject {
+    ["properties"] = new JsonObject { ["sheetId"] = 9, ["gridProperties"] = new JsonObject { ["rowCount"] = 100, ["columnCount"] = 2 } },
+    ["data"] = new JsonArray(new JsonObject { ["rowData"] = new JsonArray(new[] { Row(Value("Link kênh"), Value("Ghi chú")) }.Concat(links.Select(link => Row(Value(link)))).ToArray()) })
+};
+JsonNode BlockTabs() { var tabs = BothTabs(); tabs["sheets"]!.AsArray().Add(JsonNode.Parse("""{"properties":{"sheetId":9,"title":"Kênh block","sheetType":"GRID","gridProperties":{"rowCount":100,"columnCount":2}}}""")); return tabs; }
+foreach (var host in new[] { "www.douyin.com", "douyin.com" })
+await Test("Kênh block HTTP: khớp sec_uid, bỏ dòng rỗng, chỉ GET qua " + host, async () => {
+    var reads = 0; var job = Job(); job.BlockListSheet = job.Sheet; job.SourceAuthorSecUid = channelSec;
+    var svc = await Services(new ScriptedHandler(req => {
+        Assert(req.Method == HttpMethod.Get); reads++;
+        if (!req.RequestUri!.Query.Contains("includeGridData")) return Task.FromResult(JsonReply(BlockTabs()));
+        Assert(Uri.UnescapeDataString(req.RequestUri.Query).Contains("'Kênh block'!A1:B100"));
+        return Task.FromResult(JsonReply(new JsonObject { ["sheets"] = new JsonArray(BlockGrid("", "https://" + host + "/user/" + channelSec + "/?from=fixture")) }));
+    }));
+    try { await svc.Sheets.CheckBlockedChannelAsync(job, default); throw new Exception("Expected block"); }
+    catch (NeedsActionException ex) { Assert(ex.Kind == JobIssueKind.BlockedChannel && ex.Message.Contains("dòng 3")); }
+    Assert(reads == 2);
+});
+await Test("Kênh block HTTP: so khớp chính xác và đọc mới mỗi lượt", async () => {
+    var blocked = false; var reads = 0; var job = Job(); job.BlockListSheet = job.Sheet; job.SourceAuthorSecUid = channelSec;
+    var svc = await Services(new ScriptedHandler(req => {
+        Assert(req.Method == HttpMethod.Get);
+        if (!req.RequestUri!.Query.Contains("includeGridData")) return Task.FromResult(JsonReply(BlockTabs()));
+        reads++; return Task.FromResult(JsonReply(new JsonObject { ["sheets"] = new JsonArray(BlockGrid("https://douyin.com/user/" + channelSec + (blocked ? "" : "other"))) }));
+    }));
+    await svc.Sheets.CheckBlockedChannelAsync(job, default); blocked = true;
+    await Throws<NeedsActionException>(() => svc.Sheets.CheckBlockedChannelAsync(job, default)); Assert(reads == 2);
+});
+await Test("Kênh block HTTP: link sai báo đúng dòng kể cả sau dòng khớp", async () => {
+    foreach (var invalid in new[] { "sai", "https://douyin.com.evil.test/user/" + channelSec, "http://douyin.com/user/" + channelSec,
+        "https://douyin.com/user//", "https://user@douyin.com/user/" + channelSec, "https://douyin.com:444/user/" + channelSec })
+    {
+        var job = Job(); job.BlockListSheet = job.Sheet; job.SourceAuthorSecUid = channelSec;
+        var svc = await Services(new ScriptedHandler(req => {
+            Assert(req.Method == HttpMethod.Get);
+            return Task.FromResult(JsonReply(!req.RequestUri!.Query.Contains("includeGridData") ? BlockTabs()
+                : new JsonObject { ["sheets"] = new JsonArray(BlockGrid("https://douyin.com/user/" + channelSec, "", invalid)) }));
+        }));
+        try { await svc.Sheets.CheckBlockedChannelAsync(job, default); throw new Exception("Expected invalid row"); }
+        catch (NeedsActionException ex) { Assert(ex.Kind == JobIssueKind.InvalidData && ex.Message.Contains("dòng 4")); }
+    }
+});
+await Test("Kênh block HTTP: tab bị xóa báo rõ, không gửi lệnh ghi", async () => {
+    var job = Job(); job.BlockListSheet = job.Sheet; job.SourceAuthorSecUid = channelSec; var calls = 0;
+    var svc = await Services(new ScriptedHandler(req => { Assert(req.Method == HttpMethod.Get); calls++; return Task.FromResult(JsonReply(BothTabs())); }));
+    try { await svc.Sheets.CheckBlockedChannelAsync(job, default); throw new Exception("Expected deleted tab"); }
+    catch (NeedsActionException ex) { Assert(ex.Kind == JobIssueKind.Configuration && ex.Message.Contains("Kênh block") && ex.Message.Contains("đã bị xóa")); }
+    Assert(calls == 1);
+});
+await Test("Kênh block HTTP: mapping một cột giữ nguyên sau đổi tên", async () => {
+    var job = Job(); job.BlockListSheet = job.Sheet! with { BlockedChannelColumns = new(0, [1]) }; job.SourceAuthorSecUid = channelSec;
+    var grid = BlockGrid(); grid["data"]![0]!["rowData"] = new JsonArray(Row(Value("Ghi chú"), Value("Tên tùy ý")), Row(Value("giữ nguyên"), Value("https://douyin.com/user/" + channelSec)));
+    var svc = await Services(new ScriptedHandler(req => { Assert(req.Method == HttpMethod.Get); return Task.FromResult(JsonReply(!req.RequestUri!.Query.Contains("includeGridData") ? BlockTabs() : new JsonObject { ["sheets"] = new JsonArray(grid.DeepClone()) })); }));
+    try { await svc.Sheets.CheckBlockedChannelAsync(job, default); throw new Exception("Expected mapped block"); }
+    catch (NeedsActionException ex) { Assert(ex.Kind == JobIssueKind.BlockedChannel && ex.Message.Contains("dòng 2")); }
+});
+await Test("Kênh block: tác giả dùng metadata đúng video, không đọc secret hoặc tải file", async () => {
+    var src = Job().Source!; var vault = new MemorySecrets(); var info = new JsonObject { ["id"] = src.Id, ["source_sec_uid"] = channelSec, ["source_duration_ms"] = 1000L };
+    var browser = new FakeVideoBrowser(info); var source = new DouyinSource("no-tools", Path.Combine(runRoot, "author-temp"), vault, browser);
+    Assert(await source.ReadAuthorSecUidAsync(src, default) == channelSec && !browser.ReadCovers && vault.Reads.Count == 0 && !Directory.Exists(Path.Combine(runRoot, "author-temp")));
+    info["id"] = "wrong"; await Throws<NeedsActionException>(() => source.ReadAuthorSecUidAsync(src, default));
+    info["id"] = src.Id; info["source_sec_uid"] = ""; await Throws<NeedsActionException>(() => source.ReadAuthorSecUidAsync(src, default));
+});
+await Test("Kênh block: thiếu tác giả công khai và khách thì chuyển phiên tài khoản", async () => {
+    var src = Job().Source!;
+    using var http = new HttpClient(new ScriptedHandler(_ => Task.FromResult(JsonReply(new JsonObject()))));
+    using var pub = new DouyinPublicReader(http, TimeSpan.Zero);
+    pub.Remember(src, new JsonObject { ["id"] = src.Id, ["source_duration_ms"] = 1000L });
+    var guest = new RoutingBrowser { Info = new JsonObject { ["id"] = src.Id, ["source_duration_ms"] = 1000L } };
+    var account = new RoutingBrowser { Info = new JsonObject { ["id"] = src.Id, ["source_duration_ms"] = 1000L, ["source_sec_uid"] = channelSec } };
+    var reader = new DouyinDataReader(pub, guest, guest, account, account);
+    Assert(await reader.ReadAuthorSecUidAsync(src, default) == channelSec && guest.VideoReads == 1 && account.VideoReads == 1);
+    Assert(pub.Author(src) == channelSec);
+});
+await Test("Kênh block: xóa kết quả bỏ qua kiểm tra block", async () => {
+    var db = new FixtureJobStore(); var f = new Fakes { BlockChannel = true }; var c = new JobCoordinator(db, f, f, f); var job = Job();
+    job.State = JobState.Complete; job.YouTubeId = "existing"; job.YouTubeVerified = true; job.PendingActions = JobActions.None;
+    job.BlockListSheet = job.Sheet; await db.SaveAsync(job);
+    try { await c.RemoveJobAsync(job.Id, deleteYouTube: true); await Finish(db, job.Id);
+        Assert((await db.ListAsync()).Single().YouTubeDeleted && f.VideoDeletes == 1 && f.BlockChecks == 0 && f.AuthorReads == 0);
+    } finally { await c.StopAsync(); }
+});
+await Test("Kênh block: chỉ Tải hết quyền Sheets có lựa chọn kết nối lại đúng đích", async () => {
+    var db = new FixtureJobStore(); var f = new Fakes { BlockFailure = new NeedsAuthException("Cấp lại quyền bảng") }; var c = new JobCoordinator(db, f, f, f);
+    var job = Job(JobMode.DownloadOnly); job.BlockListSheet = job.Sheet; job.Sheet = null; job.Channel = null;
+    try { await c.SubmitAsync(job); await Finish(db, job.Id); var saved = (await db.ListAsync()).Single();
+        Assert(saved.NeedsGoogleReconnect && saved.Issue?.DependencyKey == "sheets:sheets-test" && saved.Issue.Kind == JobIssueKind.Authentication);
+        Assert(JobAttention.From(saved)!.Choices.Any(x => x.Action == AttentionAction.ReconnectGoogle));
+    } finally { await c.StopAsync(); }
+});
+await Test("Kênh block: không lấy được tác giả thì giữ lỗi nguồn, không thao tác đích", async () => {
+    var db = new FixtureJobStore(); var f = new Fakes { AuthorFailure = new NeedsActionException("Thiếu tác giả", JobIssueKind.SourceUnavailable) }; var c = new JobCoordinator(db, f, f, f); var job = Job(); job.Media = null;
+    try { await c.SubmitAsync(job); await Finish(db, job.Id); var saved = (await db.ListAsync()).Single();
+        Assert(saved.Issue?.Kind == JobIssueKind.SourceUnavailable && saved.SourceAuthorSecUid is null && f.Downloads == 0 && f.Writes == 0 && f.Uploads == 0 && f.BlockChecks == 0);
+    } finally { await c.StopAsync(); }
+});
+await Test("Kênh block: tác giả công khai dùng lại metadata và Author", async () => {
+    var src = Job().Source!; using var http = new HttpClient(new ScriptedHandler(_ => throw new Exception("Unexpected HTTP")));
+    using var pub = new DouyinPublicReader(http, TimeSpan.Zero);
+    pub.Remember(src, new JsonObject { ["id"] = src.Id, ["source_duration_ms"] = 1000L, ["source_sec_uid"] = channelSec });
+    var guest = new RoutingBrowser(); var account = new RoutingBrowser(); var reader = new DouyinDataReader(pub, guest, guest, account, account);
+    Assert(await reader.ReadAuthorSecUidAsync(src, default) == channelSec && guest.VideoReads == 0 && account.VideoReads == 0);
+});
+foreach (var challenge in new[] { false, true })
+await Test("Kênh block: đọc tác giả giữ dừng " + (challenge ? "CAPTCHA" : "429"), async () => {
+    using var http = new HttpClient(new ScriptedHandler(_ => Task.FromResult(challenge ? JsonReply(new JsonObject { ["captcha"] = new JsonObject() }) : new HttpResponseMessage(HttpStatusCode.TooManyRequests))));
+    using var pub = new DouyinPublicReader(http, TimeSpan.Zero); var guest = new RoutingBrowser { Failure = challenge ? new DouyinTerminalException("Chờ xác minh", true) : null }; var account = new RoutingBrowser();
+    await Throws<NeedsActionException>(() => new DouyinDataReader(pub, guest, guest, account, account).ReadAuthorSecUidAsync(Job().Source!, default));
+    Assert(guest.VideoReads == (challenge ? 1 : 0) && account.VideoReads == 0);
+});
+await Test("Kênh block: wizard bắt buộc tab riêng và lưu mapping một cột", async () => {
+    var service = new SetupService(); var draft = new GoogleConnectionDraft(service, (_, _, _) => Task.CompletedTask);
+    service.Selection = service.Selection with { Tabs = [new(7, "Video"), new(8, "Kênh nguồn")] };
+    await draft.SelectSheetAsync(default); await Throws<NeedsActionException>(() => draft.ContinueSheetAsync(7, default, 8));
+    Assert(draft.Step == ConnectionStep.Sheet && service.Checked.Count == 0);
+    service.Selection = service.Selection with { Tabs = [new(9, "Kênh block"), new(8, "Kênh nguồn"), new(7, "Video")] };
+    await draft.SelectSheetAsync(default); Assert(draft.Sheet!.SheetId == 7 && draft.Sheet.BlockedChannelSheetId == 9);
+    await Throws<NeedsActionException>(() => draft.ContinueSheetAsync(7, default, 8, 7));
+    await Throws<NeedsActionException>(() => draft.ContinueSheetAsync(7, default, 8, 8));
+    await Throws<NeedsActionException>(() => Sync(() => draft.SetColumns(9, new(0, [0, 1]), false, blocked: true)));
+    draft.SetColumns(9, new(1, [1]), false, blocked: true); await draft.ContinueSheetAsync(7, default, 8, 9);
+    Assert(service.Checked.Single().BlockedChannelColumns == new SheetColumnMapping(1, [1])); await draft.CancelAsync();
+});
+await Test("Kênh block HTTP: giữ giới hạn đọc 20.000 dòng và 200 cột", async () => {
+    foreach (var largeRows in new[] { true, false }) {
+        var tabs = BlockTabs(); var props = tabs["sheets"]![2]!["properties"]!["gridProperties"]!;
+        props[largeRows ? "rowCount" : "columnCount"] = largeRows ? 20001 : 201;
+        var job = Job(); job.BlockListSheet = job.Sheet; job.SourceAuthorSecUid = channelSec; var calls = 0;
+        var svc = await Services(new ScriptedHandler(req => { Assert(req.Method == HttpMethod.Get); calls++; return Task.FromResult(JsonReply(tabs)); }));
+        await Throws<NeedsActionException>(() => svc.Sheets.CheckBlockedChannelAsync(job, default)); Assert(calls == 1);
+    }
+});
+await Test("Kênh block: job chỉ Tải cũ chụp bảng hiện có, thiếu tab vẫn dừng", async () => {
+    foreach (var configured in new[] { false, true }) {
+        var db = new FixtureJobStore(); var f = new Fakes { BlockChannel = true }; var c = new JobCoordinator(db, f, f, f);
+        var job = Job(JobMode.DownloadOnly); job.Actions = JobActions.Download; job.Sheet = null; job.State = JobState.Paused; job.Media = null;
+        var target = Job().Sheet! with { BlockedChannelSheetId = configured ? 9 : null };
+        await db.SaveSettingsAsync(new() { Sheet = target }); await db.SaveAsync(job);
+        try { await c.ResumeAsync(job.Id); await Finish(db, job.Id); var saved = (await db.ListAsync()).Single();
+            Assert(saved.BlockListSnapshotCaptured && saved.BlockListSheet == target && saved.Sheet is null && f.Downloads == 0);
+            Assert(saved.Issue?.Kind == (configured ? JobIssueKind.BlockedChannel : JobIssueKind.Configuration));
+        } finally { await c.StopAsync(); }
+    }
+});
+await Test("Kênh block: job tạo khi chưa có bảng giữ snapshot rỗng sau đổi cài đặt", async () => {
+    var db = new FixtureJobStore(); var f = new Fakes { FailUploadPreflight = true, BlockChannel = true }; var c = new JobCoordinator(db, f, f, f);
+    var job = Job(); job.Actions = JobActions.Download | JobActions.UploadYouTube; job.Sheet = null;
+    try {
+        await c.SubmitAsync(job); await Finish(db, job.Id); await c.StopAsync(); var saved = (await db.ListAsync()).Single();
+        Assert(saved.State == JobState.NeedsAuth && saved.BlockListSnapshotCaptured && saved.BlockListSheet is null);
+        await db.SaveSettingsAsync(new() { Sheet = Job().Sheet }); f.FailUploadPreflight = false;
+        await c.ResumeAsync(job.Id); await Finish(db, job.Id); saved = (await db.ListAsync()).Single();
+        Assert(saved.State == JobState.Complete && saved.BlockListSheet is null && f.BlockChecks == 0 && f.AuthorReads == 0);
+        Assert(saved.Message.Contains("Chưa kết nối bảng nên chưa kiểm tra Kênh block"));
+    } finally { await c.StopAsync(); }
+});
 Console.WriteLine($"{passed} passed, {failed} failed");
 return failed == 0 ? 0 : 1;
 
@@ -3139,10 +3363,16 @@ sealed class Fakes : IVideoSource, ISheetDestination, IYouTubeDestination
     public int SheetDeletes, VideoDeletes;
     public TaskCompletionSource UploadEntered = new(TaskCreationOptions.RunContinuationsAsynchronously);
     public Task<SourceVideo> ResolveAsync(string input, CancellationToken ct) => Task.FromResult(new SourceVideo(Rules.SourceId(Rules.DouyinUri(input)) ?? "7659702794928147739", input));
+    public int BlockChecks, AuthorReads, Downloads;
+    public bool BlockChannel;
+    public Exception? BlockFailure, AuthorFailure;
+    public Task<string> ReadAuthorSecUidAsync(SourceVideo source, CancellationToken ct) { AuthorReads++; if (AuthorFailure is not null) throw AuthorFailure; return Task.FromResult("MS4wFixtureChannel00000000"); }
+    public Task CheckBlockedChannelAsync(VideoJob job, CancellationToken ct) { BlockChecks++; if (BlockFailure is not null) throw BlockFailure; if (BlockChannel) throw new NeedsActionException("Video thuộc kênh bị block (dòng 3 trong tab Kênh block). App không tải, ghi bảng hay đăng video này.", JobIssueKind.BlockedChannel); return Task.CompletedTask; }
     public int MetadataReads;
     public Task<SourceMetadata> ReadMetadataAsync(SourceVideo source, CancellationToken ct) { MetadataReads++; return Task.FromResult(new SourceMetadata(source.Id, 300001, "fixture", DateTimeOffset.UtcNow)); }
     public Task<MediaFile> DownloadAsync(VideoJob job, Func<Task> checkpoint, IProgress<double> progress, CancellationToken ct)
     {
+        Downloads++;
         if (FailFullDownload && job.Mode == JobMode.Full) throw new NeedsActionException("Douyin yêu cầu xác minh");
         if (FailCoverOnce) { FailCoverOnce = false; return Task.FromResult(job.Media! with { CoverStatus = "Thiếu ảnh bìa; tiếp tục video" }); }
         if (job.DownloadDirectory is not null && job.Media is not null) return Task.FromResult(job.Media with { CoverStatus = "Đã tải ảnh bìa" });
@@ -3185,6 +3415,16 @@ sealed class MemorySecrets : ISecretStore
     public Task WriteAsync(string key, string value, CancellationToken ct = default) { values[key] = value; return Task.CompletedTask; }
     public Task DeleteAsync(string key, CancellationToken ct = default) { values.Remove(key); return Task.CompletedTask; }
 }
+sealed class FixtureJobStore : IJobStore
+{
+    private readonly object sync = new();
+    private readonly Dictionary<string, string> jobs = new();
+    private string settings = "{}";
+    public Task SaveAsync(VideoJob job, CancellationToken ct = default) { ct.ThrowIfCancellationRequested(); lock (sync) jobs[job.Id] = JsonSerializer.Serialize(job); return Task.CompletedTask; }
+    public Task<IReadOnlyList<VideoJob>> ListAsync(CancellationToken ct = default) { ct.ThrowIfCancellationRequested(); lock (sync) return Task.FromResult<IReadOnlyList<VideoJob>>(jobs.Values.Select(x => JsonSerializer.Deserialize<VideoJob>(x)!).ToArray()); }
+    public Task<AppSettings> SettingsAsync(CancellationToken ct = default) { ct.ThrowIfCancellationRequested(); lock (sync) return Task.FromResult(JsonSerializer.Deserialize<AppSettings>(settings)!); }
+    public Task SaveSettingsAsync(AppSettings value, CancellationToken ct = default) { ct.ThrowIfCancellationRequested(); lock (sync) settings = JsonSerializer.Serialize(value); return Task.CompletedTask; }
+}
 sealed class ScriptedHandler(Func<HttpRequestMessage, Task<HttpResponseMessage>> handler) : HttpMessageHandler
 {
     protected override Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken ct) => handler(request);
@@ -3199,7 +3439,7 @@ sealed class TokenScriptedHandler(Func<HttpRequestMessage, CancellationToken, Ta
 }
 sealed class SetupService : IGoogleConnectionService
 {
-    public SheetSelection Selection = new("sheet-account-A", "Bảng của Google A", [new(3, "Tab khác"), new(7, "Video")], "sheets-account-A");
+    public SheetSelection Selection = new("sheet-account-A", "Bảng của Google A", [new(3, "Tab khác"), new(7, "Video"), new(8, "Kênh nguồn"), new(9, "Kênh block")], "sheets-account-A");
     public ChannelTarget Channel = new("channel-account-B", "Kênh của Google B", "youtube-account-B");
     public bool FailCheck, FailChannel; public int ChannelCalls;
     public List<string> Forgotten { get; } = new(); public List<SheetTarget> Checked { get; } = new();
@@ -3263,6 +3503,8 @@ sealed class FakeDouyinBrowser(DouyinChannelSnapshot snapshot) : IDouyinBrowserR
 }
 sealed class WorkflowFakes(string root) : IVideoSource, ISheetDestination, IYouTubeDestination
 {
+    public Task<string> ReadAuthorSecUidAsync(SourceVideo source, CancellationToken ct) => Task.FromResult("MS4wFixtureChannel00000000");
+    public Task CheckBlockedChannelAsync(VideoJob job, CancellationToken ct) => Task.CompletedTask;
     public string Root => root;
     public int Downloads, Writes, Uploads, MetadataReads, Validations, SheetChecks, ChannelChecks;
     public bool FailMetadata;

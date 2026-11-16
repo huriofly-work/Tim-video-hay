@@ -138,6 +138,12 @@ public sealed partial class JobCoordinator
                 if (job.RemovedFromHistory || IsJobBusy(job.Id) || job.State != JobState.NeedsAuth || original.Issue?.DependencyKey is null
                     || job.Issue?.DependencyKey != original.Issue.DependencyKey) continue;
                 var changed = false;
+                if ((original.BlockListSheet ?? original.Sheet) is { } oldBlock && (reconnected.BlockListSheet ?? reconnected.Sheet) is { } newBlock
+                    && job.BlockListSheet is { } block && block.CredentialId == oldBlock.CredentialId && block.SpreadsheetId == newBlock.SpreadsheetId)
+                {
+                    job.BlockListSheet = block with { CredentialId = newBlock.CredentialId };
+                    changed = true;
+                }
                 if (original.Sheet is { } oldSheet && reconnected.Sheet is { } newSheet
                     && job.Sheet is { } target && target.CredentialId == oldSheet.CredentialId && target.SpreadsheetId == newSheet.SpreadsheetId)
                 {

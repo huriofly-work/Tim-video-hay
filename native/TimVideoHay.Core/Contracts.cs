@@ -32,6 +32,8 @@ public interface IVideoSource
     Task MigrateOutputStateAsync(VideoJob job) => Task.CompletedTask;
     Task RestoreDownloadProgressAsync(VideoJob job) => Task.CompletedTask;
     Task<SourceVideo> ResolveAsync(string input, CancellationToken ct);
+    Task<string> ReadAuthorSecUidAsync(SourceVideo source, CancellationToken ct)
+        => throw new NeedsActionException("Không lấy được kênh của đúng video Douyin.", JobIssueKind.SourceUnavailable);
     Task<SourceMetadata> ReadMetadataAsync(SourceVideo source, CancellationToken ct);
     Task<MediaFile> DownloadAsync(VideoJob job, Func<Task> checkpoint, IProgress<double> progress, CancellationToken ct);
     Task<MediaFile> RefreshCoversAsync(VideoJob job, Func<Task> checkpoint, CancellationToken ct)
@@ -42,6 +44,8 @@ public interface IVideoSource
 }
 public interface ISheetDestination
 {
+    Task CheckBlockedChannelAsync(VideoJob job, CancellationToken ct)
+        => throw new NeedsActionException("Chưa hỗ trợ kiểm tra Kênh block.", JobIssueKind.Configuration);
     Task<int?> FindExistingRowAsync(VideoJob job, CancellationToken ct) => Task.FromResult<int?>(job.SheetRow ?? 0);
     Task CheckDuplicateAsync(VideoJob job, CancellationToken ct) => Task.CompletedTask;
     Task PrepareAsync(VideoJob job, Func<Task> checkpoint, CancellationToken ct) => Task.CompletedTask;
