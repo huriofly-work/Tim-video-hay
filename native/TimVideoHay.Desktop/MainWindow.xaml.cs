@@ -317,15 +317,15 @@ public partial class MainWindow : Window
     }
     private async Task<object> RenderColumnsSmokeAsync()
     {
-        for (var channel = 0; channel < 2; channel++)
+        for (var channel = 0; channel < 3; channel++)
         {
-            var roles = channel == 0 ? 4 : 5;
-            var window = new SheetColumnsWindow(channel == 0 ? "Video — tiêu đề đã đổi" : "Kênh nguồn — tiêu đề đã đổi", channel == 1, CancellationToken.None,
-                (_, _) => Task.FromResult(new SheetColumnSelection(0, Enumerable.Range(0, 6).Select(i => new SheetColumnOption(i, ((char)('A' + i)).ToString(), "Tên cột riêng " + (i + 1))).ToArray(), null))) { Owner = this };
+            var roles = channel == 2 ? 1 : channel == 0 ? 4 : 5;
+            var window = new SheetColumnsWindow(channel == 2 ? "Kênh block — tiêu đề đã đổi" : channel == 0 ? "Video — tiêu đề đã đổi" : "Kênh nguồn — tiêu đề đã đổi", channel == 1, CancellationToken.None,
+                (_, _) => Task.FromResult(new SheetColumnSelection(0, Enumerable.Range(0, 6).Select(i => new SheetColumnOption(i, ((char)('A' + i)).ToString(), "Tên cột riêng " + (i + 1))).ToArray(), null)), blocked: channel == 2) { Owner = this };
             window.Show(); await Task.Delay(150);
             if (window.CanSave) throw new InvalidOperationException("Empty column choices allowed.");
             for (var i = 0; i < roles; i++) window.SelectForSmoke(i, 0);
-            if (window.CanSave) throw new InvalidOperationException("Duplicate columns allowed.");
+            if (roles > 1 && window.CanSave) throw new InvalidOperationException("Duplicate columns allowed.");
             for (var i = 0; i < roles; i++) window.SelectForSmoke(i, 5 - i);
             if (!window.CanSave || !window.Mapping.Columns.SequenceEqual(Enumerable.Range(0, roles).Select(i => 5 - i))) throw new InvalidOperationException("Physical column selection failed.");
             window.UpdateLayout();
@@ -335,7 +335,7 @@ public partial class MainWindow : Window
             await CheckCompactDialogAsync(window, "columns-" + channel);
             window.Close();
         }
-        return new { bothTabs = true, missingOrDuplicateRejected = true, physicalOrderPersisted = true, diagnostic = "Actual column dialogs with mock headers; no Google writes" };
+        return new { bothTabs = true, blockedTab = true, missingOrDuplicateRejected = true, physicalOrderPersisted = true, diagnostic = "Actual column dialogs with mock headers; no Google writes" };
     }
     private async Task<object> CheckThresholdControlsAsync()
     {
@@ -607,10 +607,19 @@ public partial class MainWindow : Window
             for (var i = 0; wizardModel.Busy && i < 100; i++) await Task.Delay(50);
             if (wizardModel.Busy || !(step == 0 ? wizardModel.IsSheet : step == 1 ? wizardModel.IsChannel : wizardModel.IsConfirm)) throw new InvalidOperationException("Wizard smoke step failed.");
             if (step == 0) {
+                if (wizardModel.SelectedBlockedTab?.Id != 9 || !wizardModel.NextCommand.CanExecute(null)) throw new InvalidOperationException("Required block tab not suggested.");
+                wizardModel.SelectedBlockedTab = wizardModel.SelectedTab;
+                if (wizardModel.NextCommand.CanExecute(null)) throw new InvalidOperationException("Same block/video tab accepted.");
+                wizardModel.SelectedBlockedTab = wizardModel.SelectedSourceTab;
+                if (wizardModel.NextCommand.CanExecute(null)) throw new InvalidOperationException("Same block/source tab accepted.");
+                wizardModel.SelectedBlockedTab = null;
+                if (wizardModel.NextCommand.CanExecute(null)) throw new InvalidOperationException("Missing block tab accepted.");
+                wizardModel.SelectedBlockedTab = wizardModel.Tabs.Single(t => t.Id == 9);
                 wizardModel.Error(new NeedsAuthException("Phiên Google thử đã hết hạn. Chọn lại bảng để cấp quyền."));
                 if (!wizardModel.NoticeIsError) throw new InvalidOperationException("Wizard error must be distinguished from progress.");
                 await CheckCompactDialogAsync(window, "wizard-error");
             }
+            if (step == 0) ((FrameworkElement)window.FindName("BlockedTabBox")).BringIntoView();
             await Task.Delay(200); window.UpdateLayout();
             var bitmap = new RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32); bitmap.Render(window);
             var encoder = new PngBitmapEncoder(); encoder.Frames.Add(BitmapFrame.Create(bitmap));
@@ -620,7 +629,7 @@ public partial class MainWindow : Window
             else if (step == 1) wizardModel.NextCommand.Execute(null);
         }
         await wizardModel.CancelAsync(); window.Close();
-        await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(App.SmokeOutput)!, "wizard.json"), JsonSerializer.Serialize(new { stagesRendered = 3, saves, credentialsCleaned = service.Forgotten,
+        await File.WriteAllTextAsync(Path.Combine(Path.GetDirectoryName(App.SmokeOutput)!, "wizard.json"), JsonSerializer.Serialize(new { stagesRendered = 3, requiredBlockedTab = true, distinctBlockedTab = true, saves, credentialsCleaned = service.Forgotten,
             diagnostic = "Mock Google service; UI and cancellation only, no real login, sheet writes or uploads" }));
     }
     private async Task CheckCompactDialogAsync(Window window, string name)
@@ -796,7 +805,7 @@ public partial class MainWindow : Window
 internal sealed class SmokeGoogleConnections : IGoogleConnectionService
 {
     public int Forgotten { get; private set; }
-    public Task<SheetSelection> SelectSheetAsync(CancellationToken ct) => Task.FromResult(new SheetSelection("ui-sheet", "Bảng thử giao diện — tài khoản A", [new(7, "Video"), new(8, "Kênh nguồn")], "ui-sheets-A"));
+    public Task<SheetSelection> SelectSheetAsync(CancellationToken ct) => Task.FromResult(new SheetSelection("ui-sheet", "Bảng thử giao diện — tài khoản A", [new(7, "Video"), new(8, "Kênh nguồn"), new(9, "Kênh block")], "ui-sheets-A"));
     public Task<ChannelTarget> SelectChannelAsync(CancellationToken ct) => Task.FromResult(new ChannelTarget("ui-channel", "Kênh thử giao diện — tài khoản B", "ui-youtube-B"));
     public Task CheckSheetAsync(SheetTarget target, CancellationToken ct) => Task.CompletedTask;
     public Task ForgetAsync(string credential, CancellationToken ct) { Forgotten++; return Task.CompletedTask; }

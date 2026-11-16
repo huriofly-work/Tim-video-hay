@@ -19,7 +19,7 @@ public sealed partial class MainViewModel
         var fixture = new MainViewModel(fixtureStore, secrets, auth, sheets, youtube, coordinator, root);
         // No initialization: the fixture has no credentials and must never read Google.
         fixture.settings.LastActions = JobActions.WriteSheet;
-        fixture.settings.Sheet = new("input-fixture", 7, "Bảng thử", "Video", "unused");
+        fixture.settings.Sheet = new("input-fixture", 7, "Bảng thử", "Video", "unused", BlockedChannelSheetId: 9, BlockedChannelTabName: "Kênh block");
         fixture.Niches.Add("Vũ trụ"); fixture.Niches.Add("Động vật");
         try
         {
@@ -37,6 +37,8 @@ public sealed partial class MainViewModel
     {
         public Task<SourceVideo> ResolveAsync(string input, CancellationToken ct)
             => Task.FromResult(new SourceVideo(Rules.SourceId(Rules.DouyinUri(input))!, input));
+        public Task<string> ReadAuthorSecUidAsync(SourceVideo source, CancellationToken ct) => Task.FromResult("MS4wFixtureChannel00000000");
+        public Task CheckBlockedChannelAsync(VideoJob job, CancellationToken ct) => Task.CompletedTask;
         // Hold the worker locally while the actual submit command queues subsequent videos.
         public Task PreflightAsync(SheetTarget target, CancellationToken ct) => Task.Delay(Timeout.Infinite, ct);
         public Task<SourceMetadata> ReadMetadataAsync(SourceVideo source, CancellationToken ct) => throw new InvalidOperationException("Unexpected metadata read.");

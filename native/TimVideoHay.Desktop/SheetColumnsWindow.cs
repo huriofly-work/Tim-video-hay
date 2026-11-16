@@ -23,17 +23,17 @@ public sealed class SheetColumnsWindow : Window
     public SheetColumnMapping Mapping => new(loadedRow, selectors.Select(s => ((SheetColumnOption)s.SelectedItem).Index).ToArray());
     internal bool CanSave => save.IsEnabled;
     internal void SelectForSmoke(int role, int index) => selectors[role].SelectedItem = selectors[role].Items.Cast<SheetColumnOption>().Single(c => c.Index == index);
-    public SheetColumnsWindow(string tabName, bool channel, CancellationToken ct, Func<int?, CancellationToken, Task<SheetColumnSelection>> read)
+    public SheetColumnsWindow(string tabName, bool channel, CancellationToken ct, Func<int?, CancellationToken, Task<SheetColumnSelection>> read, bool blocked = false)
     {
         this.read = read; cancel = CancellationTokenSource.CreateLinkedTokenSource(ct);
-        Title = channel ? "Chọn cột kênh nguồn" : "Chọn cột video"; Width = 640; SizeToContent = SizeToContent.Height;
+        Title = blocked ? "Chọn cột Kênh block" : channel ? "Chọn cột kênh nguồn" : "Chọn cột video"; Width = 640; SizeToContent = SizeToContent.Height;
         WindowStartupLocation = WindowStartupLocation.CenterOwner; ResizeMode = ResizeMode.NoResize;
         var panel = new StackPanel { Margin = new(24) }; Content = panel;
         panel.Children.Add(new TextBlock { Text = Title, FontSize = 21, FontWeight = FontWeights.SemiBold });
         panel.Children.Add(new TextBlock { Text = tabName, FontWeight = FontWeights.SemiBold, TextWrapping = TextWrapping.Wrap, Margin = new(0, 8, 0, 0) });
         panel.Children.Add(new TextBlock { Text = "Chọn cột chứa từng thông tin. Đổi tên tiêu đề vẫn giữ lựa chọn; nếu chèn, xóa hoặc đổi thứ tự cột, hãy chọn lại.", TextWrapping = TextWrapping.Wrap, Margin = new(0, 10, 0, 12) });
         var top = new WrapPanel(); top.Children.Add(new TextBlock { Text = "Hàng tiêu đề", VerticalAlignment = VerticalAlignment.Center, Margin = new(0, 0, 12, 0) }); top.Children.Add(header); top.Children.Add(reload); panel.Children.Add(top);
-        var roles = channel ? Rules.ChannelHeaders : Rules.Headers; selectors = roles.Select(_ => new ComboBox { IsEditable = false, DisplayMemberPath = "Label", IsTextSearchEnabled = true }).ToArray();
+        var roles = blocked ? Rules.BlockedChannelHeaders : channel ? Rules.ChannelHeaders : Rules.Headers; selectors = roles.Select(_ => new ComboBox { IsEditable = false, DisplayMemberPath = "Label", IsTextSearchEnabled = true }).ToArray();
         var fields = new Grid(); fields.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(150) }); fields.ColumnDefinitions.Add(new ColumnDefinition());
         for (var i = 0; i < roles.Length; i++)
         {
