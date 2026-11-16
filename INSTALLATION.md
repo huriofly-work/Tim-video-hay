@@ -20,7 +20,7 @@ Gói vẫn dùng file EXE. Cai-dat.cmd cài từ gói portable, chưa phải Set
 
 2. Dùng portable: mở TimVideoHay.exe. Muốn cài: mở **Cai-dat.cmd**. Script kiểm tra file với release-manifest.json rồi sao chép; không tự chạy app.
 
-3. Chương trình được cài ở `%LocalAppData%\Programs\TimVideoHay\0.3.47`. Có shortcut **Tìm video hay** ở Start Menu/desktop và **Gỡ Tìm video hay 0.3.46** ở Start Menu, riêng cho tài khoản Windows hiện tại.
+3. Chương trình được cài ở `%LocalAppData%\Programs\TimVideoHay\0.3.47`. Có shortcut **Tìm video hay** ở Start Menu/desktop và **Gỡ Tìm video hay 0.3.47** ở Start Menu, riêng cho tài khoản Windows hiện tại.
 
 4. Mở app, chọn thư mục tại Xử lý video, chỉ tích Tải video để thử một link trước.
 
