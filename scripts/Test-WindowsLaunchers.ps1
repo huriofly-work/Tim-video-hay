@@ -1,6 +1,6 @@
 ﻿$ErrorActionPreference = 'Stop'
 $taskRoot = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..'))
-$paths = @('Start.ps1','scripts/Build-Native.ps1','scripts/Prepare-NativeTools.ps1','scripts/Archive-BrowserVersion.ps1','packaging/Install-Local.ps1','packaging/Install-Portable.ps1','packaging/Uninstall-Portable.ps1','scripts/Test-ReleasePackage.ps1','scripts/Test-InstallLifecycle.ps1','scripts/Test-Native.ps1','scripts/Publish-Release.ps1','.claude/hooks/Check-Ps1Encoding.ps1')
+$paths = @('Start.ps1','scripts/Build-Native.ps1','scripts/Prepare-NativeTools.ps1','scripts/Archive-BrowserVersion.ps1','packaging/Install-Local.ps1','packaging/Install-Portable.ps1','packaging/Uninstall-Portable.ps1','scripts/Test-ReleasePackage.ps1','scripts/Test-InstallLifecycle.ps1','scripts/Test-Native.ps1','scripts/Publish-Release.ps1')
 foreach ($path in $paths) {
     $fullPath = Join-Path $taskRoot $path
     $bytes = [IO.File]::ReadAllBytes($fullPath)

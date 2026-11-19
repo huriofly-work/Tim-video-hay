@@ -1,6 +1,6 @@
 # Kế hoạch: tab Kênh block
 
-Trạng thái: đã triển khai ngày 16/11/2026 (Issue #18); test fixture và smoke đạt, chưa nghiệm thu trên bảng Google thật. Đọc `AGENTS.md` và `docs/HANDOFF.md` trước khi sửa.
+Trạng thái: đã triển khai ngày 16/11/2026 (Issue #18); test fixture và smoke đạt, chưa nghiệm thu trên bảng Google thật. Đọc `docs/HANDOFF.md` trước khi sửa.
 
 ## Mục tiêu
 
@@ -46,7 +46,7 @@ Chạy sau mỗi bước: `powershell.exe -NoProfile -ExecutionPolicy Bypass -Fi
 
 ## Ràng buộc
 
-- Giữ snapshot đích, checkpoint, khả năng tiếp tục và kiểm tra trùng hiện có (`AGENTS.md`).
+- Giữ snapshot đích, checkpoint, khả năng tiếp tục và kiểm tra trùng hiện có.
 - Không dùng tài khoản, bảng hay kênh thật; mọi ca Google/Douyin dùng giả lập.
 - Không ghi email, đường dẫn máy, ID bảng thật vào code, test hay tài liệu.
 - File `.ps1` nếu sửa: UTF-8 BOM + CRLF.
