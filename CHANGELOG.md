@@ -40,14 +40,13 @@ Bản đầu tiên trên repo public. Chức năng tải, bìa, Google Sheets v�
 
 ### Added
 - `.gitattributes` cố định CRLF cho `.ps1` và `.cmd` khi checkout, kể cả máy dùng `core.autocrlf=false`.
-- Hook Claude Code (`.claude/hooks/Check-Ps1Encoding.ps1`) kiểm UTF-8 BOM và CRLF ngay sau mỗi lần Claude ghi hoặc sửa file `.ps1`.
 - `.github/dependabot.yml`: Dependabot mở PR nâng cấp gói NuGet hằng tuần, gộp chung một PR.
 
 ### Fixed
 - Test tải phân đoạn đếm số request bằng phép cộng nguyên tử, không còn thỉnh thoảng báo sai khi bốn luồng chạy song song.
 
 ### Removed
-- Gỡ gstack khỏi repo: xóa `.gstack/pregate.json` và dòng ignore `.gstack/tmp/`, bỏ mục gstack và skill routing trong `CLAUDE.md`/`AGENTS.md`.
+- Gỡ gstack khỏi repo: xóa `.gstack/pregate.json` và dòng ignore `.gstack/tmp/`.
 
 ## [0.3.44] - 2026-11-02
 

@@ -1,8 +1,8 @@
 # Bàn giao kỹ thuật · Tìm video hay 0.3.47
 
-Cập nhật ngày 14/11/2026. Dành cho Claude Code tiếp tục trên thư mục local chứa repo này.
+Cập nhật ngày 14/11/2026. Dành cho lần làm tiếp trên thư mục local chứa repo này.
 
-**Phạm vi sử dụng:** app do chủ repo tự dùng trên máy mình; mã nguồn công khai trên GitHub nhưng chưa cấp license (mọi quyền được bảo lưu). Release (tag `v<VERSION>` + GitHub Release, đính kèm bản build duy nhất, không nhúng Google OAuth) dùng để quản lý phiên bản và sao lưu bản cài; vì repo public nên file đính kèm ai cũng tải được. Quy trình ở skill `release` (`.claude/skills/release/SKILL.md`).
+**Phạm vi sử dụng:** app do chủ repo tự dùng trên máy mình; mã nguồn công khai trên GitHub nhưng chưa cấp license (mọi quyền được bảo lưu). Release (tag `v<VERSION>` + GitHub Release, đính kèm bản build duy nhất, không nhúng Google OAuth) dùng để quản lý phiên bản và sao lưu bản cài; vì repo public nên file đính kèm ai cũng tải được. Release tạo bằng `scripts/Publish-Release.ps1` (chạy `-DryRun` trước).
 
 ## 1. Mã nguồn cần tiếp nhận
 
@@ -43,11 +43,11 @@ Stack hiện tại là C#/.NET 10 (`net10.0-windows`), WPF + WinForms cho tray, 
 
 Chạy từ gốc repo trên Windows x64. Máy phát triển dùng .NET SDK 10 (`10.0.401` đã kiểm tra). Gói portable cần WebView2 Runtime cho đường WebView, kèm runtime .NET và `ffprobe`. Không cần Node, Python hoặc yt-dlp cho bản native. NuGet dùng lock file và `native/NuGet.Config`. Chuẩn bị `ffprobe` khi thiếu bằng `./scripts/Prepare-NativeTools.ps1 -FfprobePath <đường-dẫn-ffprobe-đúng-hash>`.
 
-Lệnh build + test chuẩn là `scripts/Test-Native.ps1` (mục "Build và test" của `AGENTS.md`): kiểm tra script PowerShell, restore `--locked-mode` và build Release `Desktop` + `Tests`, rồi chạy console runner trên fixture mới trong `test-output/`.
+Lệnh build + test chuẩn là `powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/Test-Native.ps1`: kiểm tra script PowerShell, restore `--locked-mode` và build Release `Desktop` + `Tests`, rồi chạy console runner trên fixture mới trong `test-output/`.
 
 - **Build + test (14/11/2026, `main` sau 0.3.46 và bản nâng gói NuGet):** `Test-Native.ps1` exit 0, build Release **0 cảnh báo, 0 lỗi**, runner **333 ca đạt, 0 lỗi**. Các ca HTTP/CDN/Google dùng giả lập, nên đây là kết quả fixture, không thay cho nghiệm thu trên tài khoản hay đích thật. Chưa chạy audit lỗ hổng trực tuyến.
 - **UI (lần gần nhất 05/11/2026, 0.3.44):** smoke gói sharing 0.3.44 exit 0. Chạy WPF/WebView2 với profile riêng, fixture lịch sử 127 job, kiểm tra điều khiển và wizard ba bước dùng Google giả lập. Báo cáo tại `test-output/handoff-wpf-497ea85756b04a0bbad5f5e26953cf02/app.png.json` và `wizard.json`. Lượt này chưa nghiệm thu qua launcher mặc định, đăng nhập hoặc tải/đăng thật.
-- **Lint/check:** `./scripts/Test-WindowsLaunchers.ps1` (chạy trong `Test-Native.ps1`) qua kiểm tra BOM và parser cho 12 script trên PowerShell 5.1 ngày 14/11/2026; máy hiện không có PowerShell 7 nên bước PowerShell 7 được bỏ qua (05/11 từng đạt trên 7.6.5). `git diff --check` exit 0 với cảnh báo LF/CRLF của file cũ. Không có lệnh lint C# riêng. Build coi warning là error.
+- **Lint/check:** `./scripts/Test-WindowsLaunchers.ps1` (chạy trong `Test-Native.ps1`) qua kiểm tra BOM và parser cho 11 script trên PowerShell 5.1 ngày 14/11/2026; máy hiện không có PowerShell 7 nên bước PowerShell 7 được bỏ qua (05/11 từng đạt trên 7.6.5). `git diff --check` exit 0 với cảnh báo LF/CRLF của file cũ. Không có lệnh lint C# riêng. Build coi warning là error.
 - **CI:** `.github/workflows/ci.yml` chạy `Test-Native.ps1` trên `windows-latest` cho mỗi PR và push vào `main`, bỏ qua khi chỉ sửa file `.md`. ffprobe tải từ GitHub release `GyanD/codexffmpeg` 9.0.2, kiểm SHA-256 cả file nén lẫn `ffprobe.exe`. Không dùng secret Google.
 - **Run:** launcher người dùng là `./Start.ps1`, `Mo-ung-dung.cmd` hoặc `TimVideoHay.exe` trong gói. Khi kiểm tra, gọi exe trực tiếp với `--data-dir <profile-fixture>` và `--smoke-test <ảnh-png> --smoke-wizard`. Launcher mặc định dùng profile thật.
 - **Đóng gói:** từ sau 0.3.45 chỉ còn một bản build. `./scripts/Build-Native.ps1 [-OutputDirectory <thư-mục-mới>]` build/test/publish vào `artifacts/windows-x64-<VERSION>`; bản này không nhúng Google OAuth và dùng chung cho máy mình lẫn release. `-SkipPublish` dùng khi chỉ cần build/test qua wrapper. Khi publish, gate `--check-bundle` gọi runner với `--no-build` ngay cả khi dùng `-SkipTests`, nên cần runner Release đã build. OAuth client chỉ nhập trong app (Thiết lập nâng cao) và lưu DPAPI trong hồ sơ, không cần biến môi trường bí mật. `DOTNET_CLI_HOME` và `NUGET_PACKAGES` dùng cho cache khi build, `LOCALAPPDATA` dành cho hồ sơ/cài đặt.
@@ -62,11 +62,3 @@ Danh sách việc đang theo dõi ở `TODOS.md`; mục dưới đây giữ bố
 3. **Nghiệm thu Google bằng đích thử riêng.** Xác thực bằng wizard, ghi đúng tab/cột, không trùng và không hỏng công thức. Upload rồi đối soát cùng ID khi gián đoạn, thử kết nối lại đúng bảng/kênh và xóa từng phần sau xác nhận. Tách kết quả fixture khỏi bằng chứng Google thật. Trạng thái OAuth, hạn mức và điều kiện upload hiện tại chưa xác minh lại. [GOOGLE-SETUP.md](../GOOGLE-SETUP.md) ghi quy trình và bằng chứng lịch sử.
 4. **Release và độ bền khi tự dùng.** Repo public nên file đính kèm release là phân phối công khai: gói phải kèm đúng giấy phép công cụ (ffprobe GPLv3 và nguồn FFmpeg, WebView2) theo [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md); chưa cần ký gói. Release `v0.3.44` cũ chỉ còn trong bản sao lưu; từ `v0.3.45` release tạo bằng `scripts/Publish-Release.ps1`. Cần nghiệm thu khôi phục từ zip release (giải nén, cài, kết nối Google lại), nâng cấp tại chỗ giữ nguyên hồ sơ, cách sao lưu/khôi phục hồ sơ (DPAPI gắn với user Windows, release không chứa hồ sơ). Lỗ hổng dependency do Dependabot alerts trên GitHub theo dõi. Gói hiện chưa ký, checksum chỉ chứng minh tính toàn vẹn theo manifest. DPAPI/ACL không bảo vệ khỏi tiến trình cùng tài khoản hoặc admin. WebView2 có mạng riêng, không áp đủ chính sách DNS của downloader. Xóa YouTube cần scope rộng hơn upload, Sheets có rủi ro chỉnh sửa đồng thời và giới hạn 20.000 dòng/200 cột. Chưa có bằng chứng kiểm toán độc lập. Xem [SECURITY.md](../SECURITY.md), [INSTALLATION.md](../INSTALLATION.md) và [THIRD-PARTY-NOTICES.md](../THIRD-PARTY-NOTICES.md).
 5. **Tài liệu lệch: đã dọn ngày 14/11/2026** (`SECURITY.md`, `REBUILD-PLAN.md`, `SPEC.md`, `README.md`). Khi tài liệu cũ khác triển khai, đọc mã hiện tại, `README.md` và mục 0.3.44 ở cuối `SPEC.md`/`VALIDATION.md` trước. Các file `*-PLAN.md` lưu lịch sử quyết định, trạng thái triển khai lấy từ mã và kiểm tra.
-
-## Tiếp nhận trong Claude Desktop
-
-Mở tab **Code**, chọn local folder chứa repo và gửi:
-
-> Đọc `AGENTS.md`, `CLAUDE.md`, `docs/HANDOFF.md` và `TODOS.md`. Đối chiếu Git (nhánh `main`) với mã native trong working tree. Tóm tắt kết quả tiếp nhận và chọn bước đầu theo `TODOS.md`, kèm tiêu chí kiểm tra. Giữ mọi thay đổi có sẵn. Chỉ dùng fixture local trong lượt tiếp nhận. Chờ chỉ dẫn riêng trước khi thao tác trên tài khoản/dữ liệu thật hoặc thay đổi Git.
-
-Nguồn đối chiếu gồm cây mã local, Git, các tài liệu liên kết và các trao đổi truy cập được về fallback Alien 02, bìa Alien 03, tải kiểu IDM và cách mở Claude Desktop. Các bằng chứng lịch sử chỉ áp dụng cho phiên bản và điều kiện thử được ghi trong từng lượt.
